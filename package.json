@@ -1,0 +1,51 @@
+{
+  "name": "@rohan-protocol/sdk",
+  "version": "0.3.1",
+  "description": "The Trust Layer for AI Agents – Zero-Knowledge Handshakes between autonomous machines.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "rohan",
+    "rohan-protocol",
+    "zk-proof",
+    "zero-knowledge",
+    "midnight-network",
+    "ai-agents",
+    "m2m-economy",
+    "trustless-agent-os",
+    "privacy-preserving",
+    "autonomous-agents"
+  ],
+  "author": "Rohan Protocol",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rohan-protocol/sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rohan-protocol/sdk/issues"
+  },
+  "homepage": "https://github.com/rohan-protocol/sdk#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.8.2"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+src/
+tsconfig.json
+examples/
+tests/
+contracts/
+scripts/
+.git/
+.gitignore
+*.ts
+!dist/**/*.d.ts
