@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../",
+  "sources": ["contracts/rohan_handshake.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAAA;;;;;;;;;;MAiBA,AAAA,yBA+BC;;;;;cA9BG,eAAwB;cACxB,UAAmB;cACnB,oBAA8B;cAC9B,sBAA8B;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;yCAH9B,eAAwB,+BACxB,UAAmB,+BACnB,oBAA8B,+BAC9B,sBAA8B;;;;;;;;;2DAH9B,eAAwB;2DACxB,UAAmB;2DACnB,oBAA8B;2DAC9B,sBAA8B;;;OA2BjC;MAGD,AAAA,aAEC;;;;;cAF4B,cAAuB;;;;;;;;;;;;;;;;;;yCAAvB,cAAuB;;;;;;;;;+CAAvB,cAAuB;;;OAEnD;;;;;;;;;;GACA;EAtDD;;;;;;;;;;;;;;;;;;;;;;;;;;;IAUA;;;;;;;;;yEAAqC;;;;;;;GA4CpC;EArCD,AAAA,4BA+BC;;+BA9BG,eAAwB;+BACxB,UAAmB;+BACnB,oBAA8B;+BAC9B,sBAA8B;;;;kEAY1B;;;;;;;;;;;uIAAkB;0CAAI,eAAa;;4BAOnC,sBAAoB;;IAOxB;;;;;;;2HAA8B,UAAQ;;yEAApB;;GACrB;EAGD,AAAA,gBAEC,4BAF4B,cAAuB;IAChD;;;;;;;2HAA8B,cAAY;;yEAAxB;;GACrB;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+}

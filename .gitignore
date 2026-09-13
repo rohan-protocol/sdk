@@ -1,0 +1,26 @@
+# Secrets, Keys & Wallets
+.env
+.env.*
+*.key
+*.seed
+*.json.key
+/root/.midnight/
+
+# Test, Debug & Legacy Scripts
+inspect.js
+patch-ws.js
+test_*.js
+test_*.ts
+test_*.mjs
+scripts/
+_archive/
+
+# Build & Runtime Artifacts
+dist/
+node_modules/
+*.sqlite
+*.db
+*.log
+deploy.log
+shield.log
+.private-state/

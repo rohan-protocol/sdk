@@ -1,0 +1,10 @@
+{
+  "name": "rohan-protocol-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present"
+  }
+}
