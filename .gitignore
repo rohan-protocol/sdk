@@ -1,5 +1,24 @@
+# Dependencies & Builds
 node_modules/
 dist/
+*.tsbuildinfo
+
+# Environment & Secrets
 .env
+.env.*
+*.key
+*.seed
+*.json.key
+
+# Logs & Runtime
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.private-state/
+*.sqlite
+*.db
+
+# System & OS
 .DS_Store
+Thumbs.db

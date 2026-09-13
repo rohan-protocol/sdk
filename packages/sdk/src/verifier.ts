@@ -1,5 +1,5 @@
 /**
- * @rohan-protocol/sdk – Verifier Module
+ * @rohan-zk/sdk – Verifier Module
  * 
  * Verifiziert keine HTTP-Payloads mehr, sondern
  * beobachtet den Midnight-Ledger asynchron auf State-Changes.
