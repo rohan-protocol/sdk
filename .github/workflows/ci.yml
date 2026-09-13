@@ -1,10 +1,10 @@
-name: Rohan Monorepo CI
+name: CI – Build & Validate
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -12,27 +12,35 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x, 22.x]
+        node-version: [22]
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install Monorepo Dependencies
-      run: npm ci || npm install
+      - name: Install Root Dependencies
+        run: npm ci
 
-    - name: Build All Packages (@rohan-protocol/sdk, mcp, webmcp)
-      run: |
-        npm run build --if-present
-        cd packages/sdk && npm run build
-        cd ../mcp && npm run build
-        cd ../webmcp && npm run build
+      - name: Build SDK
+        working-directory: packages/sdk
+        run: |
+          npm ci
+          npm run build
 
-    - name: Verify Clean Build
-      run: echo "✅ Alle Rohan Module erfolgreich gebaut!"
+      - name: Build WebMCP
+        working-directory: packages/webmcp
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build MCP
+        working-directory: packages/mcp
+        run: |
+          npm ci
+          npm run build
