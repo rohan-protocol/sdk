@@ -1,33 +1,28 @@
-# Secrets, Keys & Wallets
+# Private Sovereign Infrastructure (STRICTLY FORBIDDEN IN GIT)
+relayer-node/
+midnight-local-dev/
+/root/.midnight/
 .env
 .env.*
 *.key
 *.seed
-*.json.key
-/root/.midnight/
-relayer-node/.env
-relayer-node/api_keys.db
+*.db
+*.sqlite
 
-# Test, Debug & Stray Scripts
-*.cjs
-*.mjs
-*.sh
+# Legacy & Stray
+sdk/
+mcp/
+webmcp/
+generated/
 inspect.js
 patch-ws.js
-test_*.js
-test_*.ts
+test_*
 scripts/
 _archive/
-
-# Build & Runtime Artifacts
-dist/
-node_modules/
-*.sqlite
-*.db
-*.log
 deploy.log
 shield.log
+
+# Build Outputs
+dist/
+node_modules/
 .private-state/
-midnight-level-db/
-*.py
-file_inventory_audit.txt
