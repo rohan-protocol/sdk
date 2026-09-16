@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Database from 'better-sqlite3';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const dbPath = path.resolve(process.cwd(), 'api_keys.db');
 const db = new Database(dbPath);
@@ -10,14 +11,25 @@ const ipUsage = new Map<string, { count: number; resetTime: number }>();
 
 export function rohanAuthGate(req: Request, res: Response, next: NextFunction): any {
   const apiKey = req.headers['x-rohan-api-key'] as string;
-  const clientIp = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || 'unknown';
+  const clientIp = req.socket.remoteAddress || 'unknown';
 
   // 1. Authentifizierter Modus (API-Key vorhanden)
   if (apiKey) {
     try {
-      const stmt = db.prepare('SELECT quotaRemaining, active, tier FROM api_keys WHERE apiKey = ?');
-      const record = stmt.get(apiKey) as { quotaRemaining: number; active: number; tier: string } | undefined;
+      const apiKeyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+      
+      // Robust gegen beide Schemas (apiKeyHash ODER apiKey):
+      let record: any;
+      try {
+        const stmt = db.prepare('SELECT quotaRemaining, active, tier FROM api_keys WHERE apiKeyHash = ? OR apiKey = ?');
+        record = stmt.get(apiKeyHash, apiKey);
+      } catch (_) {
+        // Fallback falls die Spalte apiKeyHash in der bestehenden DB noch nicht existiert
+        const stmt = db.prepare('SELECT quotaRemaining, active, tier FROM api_keys WHERE apiKey = ?');
+        record = stmt.get(apiKey);
+      }
 
+      // 🎯 WENN DER KEY NICHT EXISTIERT ODER INAKTIV IST: SAUBERES 403 FORBIDDEN!
       if (!record || record.active !== 1) {
         return res.status(403).json({
           error: 'Forbidden: Invalid or inactive API key. Access portal at https://rohanprotocol.network'
@@ -31,10 +43,16 @@ export function rohanAuthGate(req: Request, res: Response, next: NextFunction): 
       }
 
       // 1 Credit abziehen
-      db.prepare('UPDATE api_keys SET quotaRemaining = quotaRemaining - 1 WHERE apiKey = ?').run(apiKey);
+      try {
+        db.prepare('UPDATE api_keys SET quotaRemaining = quotaRemaining - 1 WHERE apiKeyHash = ? OR apiKey = ?').run(apiKeyHash, apiKey);
+      } catch (_) {
+        db.prepare('UPDATE api_keys SET quotaRemaining = quotaRemaining - 1 WHERE apiKey = ?').run(apiKey);
+      }
+
       (req as any).auth = { tier: record.tier, apiKey };
       return next();
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Auth-Gate unexpected failure:', err);
       return res.status(500).json({ error: 'Auth system internal failure' });
     }
   }

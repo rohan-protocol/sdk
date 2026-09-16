@@ -5,13 +5,17 @@
 *.seed
 *.json.key
 /root/.midnight/
+relayer-node/.env
+relayer-node/api_keys.db
 
-# Test, Debug & Legacy Scripts
+# Test, Debug & Stray Scripts
+*.cjs
+*.mjs
+*.sh
 inspect.js
 patch-ws.js
 test_*.js
 test_*.ts
-test_*.mjs
 scripts/
 _archive/
 
@@ -24,3 +28,6 @@ node_modules/
 deploy.log
 shield.log
 .private-state/
+midnight-level-db/
+*.py
+file_inventory_audit.txt
