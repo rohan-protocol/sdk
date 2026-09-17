@@ -1,0 +1,23 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      rohanApiKey:
+        type: string
+        description: "Optional Rohan Relayer API key for production throughput (defaults to free 10 tx/day sandbox)"
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@rohan-protocol/mcp@latest'],
+      env: {
+        ROHAN_FIREWALL_LEVEL: 'V-01_STRICT',
+        ROHAN_CONTRACT_ADDRESS: '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d',
+        ROHAN_RELAYER_URL: 'https://api.rohanprotocol.network/api/v1/handshake/stream',
+        ...(config.rohanApiKey ? { ROHAN_API_KEY: config.rohanApiKey } : {})
+      }
+    })
+  exampleConfig:
+    rohanApiKey: "rohan_live_alpha_..."
