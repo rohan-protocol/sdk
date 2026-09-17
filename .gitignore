@@ -10,9 +10,9 @@ midnight-local-dev/
 *.sqlite
 
 # Legacy & Stray
-sdk
-mcp
-webmcp
+/sdk
+/mcp
+/webmcp
 generated/
 inspect.js
 patch-ws.js
