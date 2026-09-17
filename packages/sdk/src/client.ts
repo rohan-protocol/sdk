@@ -103,7 +103,7 @@ export class RohanClient {
 
     return await MemorySanitizer.withSecureWitness(rawWitness, async (witness) => {
       // 1. 32-Byte Intent-Commitment (Root für den ZK-Schaltkreis)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', witness);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', witness as unknown as BufferSource);
       const batchRootBytes = new Uint8Array(hashBuffer);
       const intentHashHex = Array.from(batchRootBytes)
         .map((b) => b.toString(16).padStart(2, '0'))
