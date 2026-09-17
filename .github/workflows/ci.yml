@@ -30,17 +30,17 @@ jobs:
       - name: Build SDK
         working-directory: packages/sdk
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Build WebMCP
         working-directory: packages/webmcp
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Build MCP
         working-directory: packages/mcp
         run: |
-          npm ci
+          npm install
           npm run build
