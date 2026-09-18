@@ -3,9 +3,8 @@
   "name": "io.github.rohan-protocol/mcp",
   "title": "Rohan ZK Shield",
   "description": "Zero-knowledge verification gateway for MCP handshakes and tool-boundary checks.",
-  "version": "0.5.2",
+  "version": "0.5.1",
   "repository": {
-    "type": "git",
     "url": "https://github.com/rohan-protocol/sdk.git",
     "source": "github"
   },
@@ -14,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@rohan-protocol/mcp",
-      "version": "0.5.2",
+      "version": "0.5.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
