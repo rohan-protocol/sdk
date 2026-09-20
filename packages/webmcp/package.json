@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/webmcp",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Browser-Native Zero-Knowledge Shield for WebMCP and AI Web Agents",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@rohan-protocol/sdk": "file:../sdk"
+    "@rohan-protocol/sdk": "^0.5.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
