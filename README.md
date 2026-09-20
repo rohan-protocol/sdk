@@ -93,9 +93,9 @@ Rohan shifts the security perimeter from network firewalls to **stateless, clien
 
 | Package | Version | Role | Runtime |
 | :--- | :---: | :--- | :--- |
-| [`@rohan-protocol/sdk`](https://www.npmjs.com/package/@rohan-protocol/sdk) | `v0.5.0` | ZK proving engine, Poseidon/SHA-256 commitments, and relayer client | Node.js, Deno, Bun |
-| [`@rohan-protocol/mcp`](https://www.npmjs.com/package/@rohan-protocol/mcp) | `v0.5.0` | MCP server with Pre-Prover Semantic Firewall (V-01) | Claude, Cursor, Google ADK, CLI |
-| [`@rohan-protocol/webmcp`](https://www.npmjs.com/package/@rohan-protocol/webmcp) | `v0.5.0` | Browser WebMCP shield with DOM defense (V-07) and WebWorker proving | React, Next.js, Extensions |
+| [`@rohan-protocol/sdk`](https://www.npmjs.com/package/@rohan-protocol/sdk) | `v0.5.3` | ZK proving engine, Poseidon/SHA-256 commitments, and relayer client | Node.js, Deno, Bun |
+| [`@rohan-protocol/mcp`](https://www.npmjs.com/package/@rohan-protocol/mcp) | `v0.5.3` | MCP server with Pre-Prover Semantic Firewall (V-01) | Claude, Cursor, Google ADK, CLI |
+| [`@rohan-protocol/webmcp`](https://www.npmjs.com/package/@rohan-protocol/webmcp) | `v0.5.3` | Browser WebMCP shield with DOM defense (V-07) and WebWorker proving | React, Next.js, Extensions |
 
 ---
 

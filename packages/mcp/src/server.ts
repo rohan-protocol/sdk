@@ -154,10 +154,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('🛡️ Rohan Protocol MCP Server läuft via Stdio...');
+  console.error('🛡️ Rohan Protocol MCP Server running via stdio...');
 }
 
 run().catch((error) => {
-  console.error('Fataler Serverfehler:', error);
+  console.error('Fatal server error:', error);
   process.exit(1);
 });
