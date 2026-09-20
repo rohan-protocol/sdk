@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/sdk",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Zero-Knowledge Agent Handshake SDK for Midnight Blockchain",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && ln -sfn ../src/generated dist/generated",
+    "build": "tsc && rm -rf dist/generated && cp -r src/generated dist/generated",
     "clean": "rm -rf dist"
   },
   "dependencies": {
