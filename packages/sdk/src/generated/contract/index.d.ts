@@ -4,39 +4,49 @@ export type Witnesses<PS> = {
 }
 
 export type ImpureCircuits<PS> = {
+  initial_setup(context: __compactRuntime.CircuitContext<PS>,
+                initial_root_0: Uint8Array,
+                relayer_identity_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verify_batched_handshakes(context: __compactRuntime.CircuitContext<PS>,
                             previous_root_0: Uint8Array,
                             new_root_0: Uint8Array,
-                            batched_proof_data_0: Uint8Array,
-                            total_toll_collected_0: bigint): __compactRuntime.CircuitResults<PS, []>;
-  initial_setup(context: __compactRuntime.CircuitContext<PS>,
-                initial_root_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                            proof_commitment_0: Uint8Array,
+                            caller_identity_0: Uint8Array,
+                            toll_amount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
+  initial_setup(context: __compactRuntime.CircuitContext<PS>,
+                initial_root_0: Uint8Array,
+                relayer_identity_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verify_batched_handshakes(context: __compactRuntime.CircuitContext<PS>,
                             previous_root_0: Uint8Array,
                             new_root_0: Uint8Array,
-                            batched_proof_data_0: Uint8Array,
-                            total_toll_collected_0: bigint): __compactRuntime.CircuitResults<PS, []>;
-  initial_setup(context: __compactRuntime.CircuitContext<PS>,
-                initial_root_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                            proof_commitment_0: Uint8Array,
+                            caller_identity_0: Uint8Array,
+                            toll_amount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type PureCircuits = {
 }
 
 export type Circuits<PS> = {
+  initial_setup(context: __compactRuntime.CircuitContext<PS>,
+                initial_root_0: Uint8Array,
+                relayer_identity_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   verify_batched_handshakes(context: __compactRuntime.CircuitContext<PS>,
                             previous_root_0: Uint8Array,
                             new_root_0: Uint8Array,
-                            batched_proof_data_0: Uint8Array,
-                            total_toll_collected_0: bigint): __compactRuntime.CircuitResults<PS, []>;
-  initial_setup(context: __compactRuntime.CircuitContext<PS>,
-                initial_root_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+                            proof_commitment_0: Uint8Array,
+                            caller_identity_0: Uint8Array,
+                            toll_amount_0: bigint): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type Ledger = {
+  readonly state_root: Uint8Array;
+  readonly sequence_number: bigint;
+  readonly total_toll: bigint;
+  readonly authorized_relayer: Uint8Array;
 }
 
 export type ContractReferenceLocations = any;

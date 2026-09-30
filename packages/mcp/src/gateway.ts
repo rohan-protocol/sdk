@@ -1,4 +1,4 @@
-import { RohanRelayerClient } from '../../sdk/dist/index.js';
+import { RohanRelayerClient } from '@rohan-protocol/sdk';
 
 export interface RohanMcpGatewayOptions {
   transport?: 'stdio' | 'streamable-http';
@@ -8,7 +8,7 @@ export interface RohanMcpGatewayOptions {
 }
 
 /**
- * ⚡ RohanMcpGateway
+ * RohanMcpGateway
  * Connects AI Agent pipelines (Google ADK 2.0, Gemini, Claude, Cursor)
  * to the Rohan Protocol Gas Station via Streamable HTTP (NDJSON) or Stdio.
  */
@@ -20,7 +20,7 @@ export class RohanMcpGateway {
     this.transport = options.transport || 'streamable-http';
     this.relayerClient = new RohanRelayerClient({
       relayerUrl: options.relayerUrl || 'http://127.0.0.1:4005/api/v1/handshake',
-      contractAddress: options.contractAddress || '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d',
+      contractAddress: options.contractAddress || '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
       apiKey: options.apiKey,
     });
   }
@@ -35,15 +35,14 @@ export class RohanMcpGateway {
       parameters: {
         type: 'object',
         properties: {
-          agentId: { type: 'string', description: 'Identifier of calling agent' },
-          intent: { type: 'string', description: 'Semantic action intent' },
-          proof: { type: 'string', description: 'ZK-SNARK proof payload' },
-          publicInputs: { type: 'object', description: 'Public inputs for on-chain verification' },
+          agentId: { type: 'string', description: 'Decentralized Identifier (DID) of calling agent' },
+          intent: { type: 'string', description: 'Semantic action intent or agreement payload' },
+          counterpartyId: { type: 'string', description: 'Optional recipient agent identifier' },
         },
         required: ['agentId', 'intent'],
       },
       execute: async (params: any) => {
-        return await this.relayerClient.submitProof(params);
+        return await this.relayerClient.submitHandshake(params);
       },
     };
   }

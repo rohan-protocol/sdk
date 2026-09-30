@@ -15,7 +15,7 @@ export const WebMcpContext = createContext<WebMcpContextValue | null>(null);
 export function useRohanWebMcp(): WebMcpContextValue {
   const ctx = useContext(WebMcpContext);
   if (!ctx) {
-    throw new Error('useRohanWebMcp muss innerhalb eines <RohanWebMcpProvider> verwendet werden.');
+    throw new Error('useRohanWebMcp must be used within a <RohanWebMcpProvider>.');
   }
   return ctx;
 }

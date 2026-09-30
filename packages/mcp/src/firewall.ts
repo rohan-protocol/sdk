@@ -21,11 +21,11 @@ export class SemanticFirewall {
 
     const serialized = JSON.stringify(intent.payload);
     if (serialized.length > 8192) {
-      return false; // Denial-of-Service Schutz
+      return false; // Denial-of-Service Protection (Payload size cap)
     }
 
     if (this.INJECTION_REGEX.test(serialized)) {
-      return false; // Prompt Injection blockiert
+      return false; // Semantic Prompt Injection detected
     }
 
     return true;

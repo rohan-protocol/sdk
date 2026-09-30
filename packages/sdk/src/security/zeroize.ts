@@ -1,30 +1,27 @@
-/**
- * 🛡️ ROHAN PROTOCOL — SECURITY VECTOR V-02: MEMORY SANITATION
- * Garantiert die restlose Tilgung privater Zeugen (w) und sensibler Puffer aus dem RAM.
- */
+import crypto from 'node:crypto';
 
+/**
+ * Rohan Protocol - Security Vector V-02: Memory Hygiene
+ * Guarantees zero-retention of private witnesses and sensitive buffers in client memory.
+ */
 export class MemorySanitizer {
   /**
-   * Überschreibt einen Puffer restlos mit Nullen und kryptographischem Rauschen.
-   * Verhindert Dead-Code-Elimination durch volatile Mehrfach-Überschreibung.
+   * Overwrites a memory buffer with cryptographically secure pseudo-random noise,
+   * followed by deterministic zero-filling to prevent cold-boot and memory scraping attacks.
    */
   static wipe(buffer: Uint8Array | Buffer | number[]): void {
     if (!buffer) return;
 
     if (buffer instanceof Uint8Array || Buffer.isBuffer(buffer)) {
-      // Pass 1: Mit Zufallsrauschen überschreiben (gegen Restladungen/Memory-Scraping)
-      if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-        try {
-          crypto.getRandomValues(buffer);
-        } catch (_) {
-          // Fallback falls Puffer zu groß für WebCrypto
-          buffer.fill(0xff);
+      try {
+        if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+          globalThis.crypto.getRandomValues(buffer);
+        } else {
+          crypto.randomFillSync(buffer as Buffer);
         }
-      } else {
+      } catch (_) {
         buffer.fill(0xff);
       }
-
-      // Pass 2: Deterministisch mit Nullen versiegeln
       buffer.fill(0x00);
     } else if (Array.isArray(buffer)) {
       for (let i = 0; i < buffer.length; i++) {
@@ -34,8 +31,8 @@ export class MemorySanitizer {
   }
 
   /**
-   * Führt eine Operation mit einem sensiblen Zeugen (w) aus und garantiert,
-   * dass der Zeuge im `finally`-Block restlos getilgt wird – selbst bei Exceptions!
+   * Executes a cryptographic closure with a sensitive private witness and guarantees
+   * that the witness memory is wiped in a `finally` block, even if an exception occurs.
    */
   static async withSecureWitness<T>(
     witness: Uint8Array,

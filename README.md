@@ -114,7 +114,7 @@ Add the following to `claude_desktop_config.json`. See the [official configurati
       "command": "npx",
       "args": ["-y", "@rohan-protocol/mcp"],
       "env": {
-        "ROHAN_CONTRACT_ADDRESS": "6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d",
+        "ROHAN_CONTRACT_ADDRESS": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
         "ROHAN_RELAYER_URL": "https://api.rohanprotocol.network/api/v1/handshake/stream",
         "ROHAN_API_KEY": "rohan_live_..."
       }
@@ -156,7 +156,7 @@ const model = ai.getGenerativeModel({
 ### Headless bots and custom MCP hosts
 
 ```bash
-ROHAN_CONTRACT_ADDRESS="6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d" ROHAN_RELAYER_URL="https://api.rohanprotocol.network/api/v1/handshake/stream" npx -y @rohan-protocol/mcp
+ROHAN_CONTRACT_ADDRESS="585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e" ROHAN_RELAYER_URL="https://api.rohanprotocol.network/api/v1/handshake/stream" npx -y @rohan-protocol/mcp
 ```
 
 Once connected, agents can negotiate and anchor handshakes using natural language:
@@ -178,7 +178,7 @@ Generate a proof in memory and submit it to the relayer with live Streamable HTT
 ```typescript
 import { RohanProver, RohanRelayerClient } from "@rohan-protocol/sdk";
 
-const CONTRACT_ADDRESS = "6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d";
+const CONTRACT_ADDRESS = "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e";
 
 // 1. Initialize Prover with target contract
 const prover = new RohanProver(CONTRACT_ADDRESS);
@@ -345,7 +345,7 @@ Rohan maps each major attack surface to a dedicated protocol mitigation:
 
 - **Network:** Midnight Preprod Testnet
 - **Smart contract:** `rohan_handshake.compact` (compiled with `compactc v0.30.0`)
-- **Contract address:** `6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d`
+- **Contract address:** `585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e`
 - **Streamable Relayer endpoint:** `https://api.rohanprotocol.network/api/v1/handshake/stream`
 
 ---

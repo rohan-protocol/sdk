@@ -9,22 +9,26 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { SemanticFirewall } from './firewall.js';
-import { RohanClient } from '../../sdk/dist/index.js';
+import { RohanClient } from '@rohan-protocol/sdk';
 
-// Midnight Preprod Contract Adresse
-const CONTRACT_ADDRESS = process.env.ROHAN_CONTRACT_ADDRESS || '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d';
+const CONTRACT_ADDRESS = process.env.ROHAN_CONTRACT_ADDRESS || '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e';
 const RELAYER_URL = process.env.ROHAN_RELAYER_URL || 'http://127.0.0.1:4005/api/v1/handshake';
+const API_KEY = process.env.ROHAN_API_KEY || '';
 
-const rohanClient = new RohanClient(CONTRACT_ADDRESS);
+const rohanClient = new RohanClient({
+  contractAddress: CONTRACT_ADDRESS,
+  relayerUrl: RELAYER_URL,
+  apiKey: API_KEY,
+});
 
 /**
- * 🛡️ ROHAN PROTOCOL MCP SERVER
- * Ermöglicht KI-Agenten native Zero-Knowledge Handshakes über das Model Context Protocol.
+ * ROHAN PROTOCOL MCP SERVER
+ * Empowers autonomous LLM agents with native Zero-Knowledge Handshakes via Model Context Protocol.
  */
 const server = new Server(
   {
     name: 'rohan-protocol-mcp',
-    version: '0.5.0',
+    version: '0.6.0',
   },
   {
     capabilities: {
@@ -33,28 +37,28 @@ const server = new Server(
   }
 );
 
-// 1. Tool-Liste für LLMs deklarieren
+// 1. Declare tool schema for LLMs (100% Technical English)
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
         name: 'rohan_zk_handshake',
         description:
-          'Führt einen kryptographischen Zero-Knowledge Handshake auf der Midnight Blockchain aus. Beweist einen Intent oder eine Vereinbarung zwischen Agenten ohne Preisgabe vertraulicher Inhalte.',
+          'Executes a cryptographic zero-knowledge state transition on Midnight Blockchain. Proves an intent, transaction, or inter-agent agreement without exposing confidential parameters.',
         inputSchema: {
           type: 'object',
           properties: {
             agentId: {
               type: 'string',
-              description: 'Die dezentrale Identität (DID) oder ID des initiierenden Agenten',
+              description: 'Decentralized Identifier (DID) or identifier of the initiating agent',
             },
             intent: {
               type: 'string',
-              description: 'Der semantische Aktionsplan oder Vereinbarungsinhalt, der im ZK-Proof versiegelt wird',
+              description: 'Semantic action plan, payload, or agreement terms to be cryptographically committed',
             },
             counterpartyId: {
               type: 'string',
-              description: 'Optionale ID des Empfänger-Agenten',
+              description: 'Optional identifier of counterparty agent',
             },
           },
           required: ['agentId', 'intent'],
@@ -64,10 +68,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// 2. Tool-Aufruf ausführen
+// 2. Execute tool invocation
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   if (request.params.name !== 'rohan_zk_handshake') {
-    throw new Error(`Unbekanntes Tool: ${request.params.name}`);
+    throw new Error(`Unknown tool: ${request.params.name}`);
   }
 
   const args = request.params.arguments as {
@@ -76,7 +80,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     counterpartyId?: string;
   };
 
-  // A. Semantic Firewall Prüfung (Sicherheits-Vektor V-01)
+  // A. Semantic Firewall Verification (Security Vector V-01)
   const isValid = SemanticFirewall.validate({
     agentId: args.agentId,
     action: 'rohan_zk_handshake',
@@ -99,25 +103,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   try {
-    // B. ZK-Proof im Client-RAM generieren (inkl. V-02 Memory Sanitation!)
-    const proofData = await rohanClient.generateHandshakeProof({
+    // B. Generate cryptographic commitment & submit via Relayer
+    const receipt = await rohanClient.submitHandshake({
       agentId: args.agentId,
       intent: args.intent,
+      counterpartyId: args.counterpartyId,
     });
-
-    // C. Proof an Relayer (Gas Station) übermitteln
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (process.env.ROHAN_API_KEY) {
-      headers['x-rohan-api-key'] = process.env.ROHAN_API_KEY;
-    }
-
-    const response = await fetch(RELAYER_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(proofData),
-    });
-
-    const receipt = await response.json();
 
     return {
       content: [
@@ -126,7 +117,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           text: JSON.stringify(
             {
               status: 'success',
-              message: 'Zero-Knowledge Handshake erfolgreich auf Midnight Blockchain verankert!',
+              message: 'Zero-Knowledge Handshake successfully settled on Midnight Blockchain.',
               receipt,
             },
             null,
@@ -154,10 +145,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('🛡️ Rohan Protocol MCP Server running via stdio...');
+  console.error('🛡️ Rohan Protocol MCP Server running via stdio (v0.6.0)...');
 }
 
 run().catch((error) => {
-  console.error('Fatal server error:', error);
+  console.error('Fatal MCP server error:', error);
   process.exit(1);
 });

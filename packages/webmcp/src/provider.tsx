@@ -11,8 +11,8 @@ export interface RohanWebMcpProviderProps {
 
 export const RohanWebMcpProvider: React.FC<RohanWebMcpProviderProps> = ({
   children,
-  relayerUrl = 'http://127.0.0.1:4005/api/v1/handshake',
-  contractAddress = '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d',
+  relayerUrl = 'https://api.rohanprotocol.network/api/v1/handshake',
+  contractAddress = '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
   apiKey,
 }) => {
   const [isProving, setIsProving] = useState(false);
@@ -25,7 +25,7 @@ export const RohanWebMcpProvider: React.FC<RohanWebMcpProviderProps> = ({
       intent: string;
       formData: Record<string, unknown>;
     }) => {
-      // 1. Pre-Prover Firewall Check (V-07)
+      // 1. Pre-Commitment Firewall Inspection (Security Vector V-07)
       const firewallCheck = WebMcpFirewall.inspect({
         toolName: 'web_form_shield',
         callerOrigin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
@@ -38,20 +38,20 @@ export const RohanWebMcpProvider: React.FC<RohanWebMcpProviderProps> = ({
 
       setIsProving(true);
       try {
-        // 2. Lokale Hash- und ZK-Vorbereitung
+        // 2. In-Memory Witness Allocation & Commitment Generation
         const timestamp = Date.now();
         const encoder = new TextEncoder();
         const witness = encoder.encode(`${agentId}:${intent}:${JSON.stringify(formData)}:${timestamp}`);
+        
         const hashBuf = await crypto.subtle.digest('SHA-256', witness);
         const intentHash = Array.from(new Uint8Array(hashBuf))
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('');
 
-        // Memory Wiping (V-02)
+        // Memory Sanitation (Vector V-02): Zeroize private witness
         witness.fill(0x00);
 
-        const proofData = {
-          proof: btoa(JSON.stringify({ protocol: 'midnight-plonk-v1', commitment: intentHash, timestamp })),
+        const commitmentPayload = {
           publicInputs: {
             intentHash,
             agentId,
@@ -61,7 +61,7 @@ export const RohanWebMcpProvider: React.FC<RohanWebMcpProviderProps> = ({
           contractAddress,
         };
 
-        // 3. Relayer Submission (Gasless für den Browsernutzer)
+        // 3. Relayer Submission (Gasless for client browser)
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
           ...(apiKey ? { 'x-rohan-api-key': apiKey } : {}),
@@ -69,12 +69,12 @@ export const RohanWebMcpProvider: React.FC<RohanWebMcpProviderProps> = ({
         const res = await fetch(relayerUrl, {
           method: 'POST',
           headers,
-          body: JSON.stringify(proofData),
+          body: JSON.stringify(commitmentPayload),
         });
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Relayer rejection');
+          const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+          throw new Error(err.error || `Relayer rejected submission with HTTP ${res.status}`);
         }
 
         return await res.json();

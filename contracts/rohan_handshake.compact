@@ -1,20 +1,66 @@
-// Rohan Protocol Handshake Verifier (StarStream Batching)
-ledger current_batch_root: Bytes<32>;
-ledger total_tolls_recorded: Uint<64>;
+pragma language_version >= 0.20;
 
-export circuit initial_setup(initial_root: Bytes<32>): [] {
-    current_batch_root = disclose(initial_root);
+import CompactStandardLibrary;
+
+// ==========================================
+// ROHAN PROTOCOL - ON-CHAIN SETTLEMENT LEDGER
+// ==========================================
+
+export ledger state_root: Bytes<32>;
+export ledger sequence_number: Uint<64>;
+export ledger total_toll: Uint<64>;
+export ledger authorized_relayer: Bytes<32>;
+
+/**
+ * Genesis Initialization: Binds the genesis root and registers the authorized Relayer identity.
+ */
+export circuit initial_setup(
+    initial_root: Bytes<32>,
+    relayer_identity: Bytes<32>
+): [] {
+    // Only allow setup once from virgin state (all zeroes)
+    assert(sequence_number == 0,
+        "Protocol already initialized: Setup circuit is locked");
+
+    state_root = disclose(initial_root);
+    authorized_relayer = disclose(relayer_identity);
+    sequence_number = 1;
+    total_toll = 0;
 }
 
+/**
+ * Verifies and settles a batch handshake on Midnight.
+ * Enforces Relayer authorization, state continuity, and cryptographic proof-commitment.
+ */
 export circuit verify_batched_handshakes(
     previous_root: Bytes<32>,
     new_root: Bytes<32>,
-    batched_proof_data: Bytes<128>,
-    total_toll_collected: Uint<64>
+    proof_commitment: Bytes<32>,
+    caller_identity: Bytes<32>,
+    toll_amount: Uint<64>
 ): [] {
-    // Kryptographische State-Konsistenz:
-    // Der vorherige Root muss exakt mit dem aktuellen Ledger-State übereinstimmen!
-    assert current_batch_root == previous_root "INVALID_PREVIOUS_STATE_ROOT";
-    current_batch_root = disclose(new_root);
-    total_tolls_recorded = disclose(total_toll_collected);
+    // 1. Authorization: Verify that the caller matches the authorized relayer
+    assert(caller_identity == authorized_relayer,
+        "Unauthorized: Prover is not permitted to submit state transitions");
+
+    // 2. State Continuity: Prevent race conditions & stale root collisions
+    assert(previous_root == state_root,
+        "Previous root mismatch: Stale state transition rejected");
+
+    // 3. Meaningful State Mutation: Root must change
+    assert(new_root != previous_root,
+        "Invalid transition: New root cannot be identical to previous root");
+
+    // 4. Cryptographic Proof Binding: Disallow empty/zero proof commitments
+    assert(proof_commitment != [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] as Bytes<32>,
+        "Cryptographic violation: Empty proof commitment rejected");
+
+    // 5. Economic Toll Enforcement
+    assert(toll_amount >= 100,
+        "Insufficient toll fee: Minimum toll of 100 required");
+
+    // --- State Mutations ---
+    state_root = disclose(new_root);
+    sequence_number = (sequence_number + 1) as Uint<64>;
+    total_toll = (total_toll + disclose(toll_amount)) as Uint<64>;
 }

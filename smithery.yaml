@@ -14,7 +14,7 @@ startCommand:
       args: ['-y', '@rohan-protocol/mcp@latest'],
       env: {
         ROHAN_FIREWALL_LEVEL: 'V-01_STRICT',
-        ROHAN_CONTRACT_ADDRESS: '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d',
+        ROHAN_CONTRACT_ADDRESS: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
         ROHAN_RELAYER_URL: 'https://api.rohanprotocol.network/api/v1/handshake/stream',
         ...(config.rohanApiKey ? { ROHAN_API_KEY: config.rohanApiKey } : {})
       }

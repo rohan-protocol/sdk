@@ -4,6 +4,32 @@
   "runtime-version": "0.15.0",
   "circuits": [
     {
+      "name": "initial_setup",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "initial_root",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "relayer_identity",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
       "name": "verify_batched_handshakes",
       "pure": false,
       "proof": true,
@@ -23,36 +49,24 @@
           }
         },
         {
-          "name": "batched_proof_data",
-          "type": {
-            "type-name": "Bytes",
-            "length": 128
-          }
-        },
-        {
-          "name": "total_toll_collected",
-          "type": {
-            "type-name": "Uint",
-            "maxval": 18446744073709551615
-          }
-        }
-      ],
-      "result-type": {
-        "type-name": "Tuple",
-        "types": [
-        ]
-      }
-    },
-    {
-      "name": "initial_setup",
-      "pure": false,
-      "proof": true,
-      "arguments": [
-        {
-          "name": "initial_root",
+          "name": "proof_commitment",
           "type": {
             "type-name": "Bytes",
             "length": 32
+          }
+        },
+        {
+          "name": "caller_identity",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "toll_amount",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
           }
         }
       ],

@@ -1,168 +1,65 @@
-import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { CompiledContract } from '@midnight-ntwrk/compact-js';
-
-import { RohanProverEngine } from './prover.js';
+import crypto from 'node:crypto';
 import { MemorySanitizer } from './security/zeroize.js';
 import type { 
   RohanConfig, 
-  RohanContractState, 
-  HandshakeProofData 
+  AgentHandshakeIntent, 
+  HandshakeCommitmentPayload, 
+  HandshakeReceipt 
 } from './types.js';
 
-// Kompiliertes Contract Modul
-import { Contract } from './generated/contract/index.js';
-
 /**
- * Serialisiert BigInts verlustfrei für den HTTP-Transport.
+ * Normalizes relayer URL to ensure valid API endpoint routing.
  */
-function serializeWithBigInt(obj: any): string {
-  return JSON.stringify(obj, (_, v) => (typeof v === 'bigint' ? { __bigint: v.toString() } : v));
-}
-
-/**
- * Deserialisiert BigInts aus dem HTTP-Transport.
- */
-export function deserializeWithBigInt(str: string): any {
-  return JSON.parse(str, (_, v) => (v && typeof v === 'object' && v.__bigint ? BigInt(v.__bigint) : v));
+function normalizeRelayerUrl(url?: string): string {
+  if (!url) return 'https://api.rohanprotocol.network/api/v1/handshake';
+  const clean = url.replace(/\/+$/, '');
+  if (clean.endsWith('/api/v1/handshake') || clean.endsWith('/api/v1/handshake/stream')) {
+    return clean;
+  }
+  return `${clean}/api/v1/handshake`;
 }
 
 export class RohanClient {
-  public readonly config: RohanConfig;
-  private readonly proverEngine: RohanProverEngine;
-  private readonly publicDataProvider: any;
+  public readonly config: Required<RohanConfig>;
 
-  constructor(configOrAddress: RohanConfig | string) {
-    if (typeof configOrAddress === 'string') {
+  constructor(config: RohanConfig | string = {}) {
+    if (typeof config === 'string') {
       this.config = {
-        contractAddress: configOrAddress,
+        contractAddress: config,
         network: 'preprod',
+        relayerUrl: 'https://api.rohanprotocol.network/api/v1/handshake',
+        apiKey: '',
       };
     } else {
-      this.config = configOrAddress;
+      this.config = {
+        contractAddress: config.contractAddress || '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
+        network: config.network || 'preprod',
+        relayerUrl: normalizeRelayerUrl(config.relayerUrl),
+        apiKey: config.apiKey || '',
+      };
     }
-
-    setNetworkId(this.config.network as any);
-
-    const indexerUrl = this.config.indexerUrl || 'https://indexer.preprod.midnight.network/api/v4/graphql';
-    const indexerWs = this.config.indexerWs || 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws';
-
-    this.proverEngine = new RohanProverEngine(this.config.zkAssetsPath, this.config.proofServerUrl);
-    this.publicDataProvider = indexerPublicDataProvider(indexerUrl, indexerWs);
   }
 
-  /**
-   * Liest den aktuellen Zustand (State Pointer) des Rohan Contracts von der Blockchain.
-   */
-  async getContractState(): Promise<RohanContractState> {
-    let rawState: any;
-    if (typeof (this.publicDataProvider as any).queryContractState === 'function') {
-      rawState = await (this.publicDataProvider as any).queryContractState(this.config.contractAddress);
-    } else {
-      const deployed = await findDeployedContract(
-        { publicDataProvider: this.publicDataProvider } as any,
-        {
-          contractAddress: this.config.contractAddress,
-          compiledContract: CompiledContract.make('rohan_handshake', Contract).pipe(
-            CompiledContract.withVacantWitnesses,
-            CompiledContract.withCompiledFileAssets(this.proverEngine.getAssetsPath())
-          ) as any,
-        }
-      );
-      rawState = typeof (deployed as any).queryContractState === 'function'
-        ? await (deployed as any).queryContractState()
-        : await (deployed as any).queryInitialContractState();
-    }
-
-    const ptr = (rawState?.data as any)?.__wbg_ptr ?? rawState?.__wbg_ptr ?? 0;
-    return {
-      rawStatePointer: Number(ptr),
-      contractAddress: this.config.contractAddress,
-      network: this.config.network,
-    };
-  }
-
-  /**
-   * 🛡️ 100% ECHTE ZERO-KNOWLEDGE BEWEISFÜHRUNG (unprovenTx)
-   * Berechnet den echten mathematischen ZK-SNARK-Proof über die ZKIR-Schaltung.
-   * Erzeugt eine UnprovenTransaction im RAM. Keine Mocks, kein Gas für den Client!
-   */
-  async generateHandshakeProof(payload: {
-    agentId: string;
-    intent: string;
-    timestamp?: number;
-    privateData?: Record<string, unknown>;
-  }): Promise<HandshakeProofData> {
+  async generateHandshakeProof(payload: AgentHandshakeIntent): Promise<HandshakeCommitmentPayload> {
     const timestamp = payload.timestamp || Date.now();
     const encoder = new TextEncoder();
     
-    // Privater Zeuge w
-    const rawWitness = encoder.encode(`${payload.agentId}:${payload.intent}:${JSON.stringify(payload.privateData || {})}:${timestamp}`);
+    const rawWitness = encoder.encode(
+      `${payload.agentId}:${payload.intent}:${JSON.stringify(payload.privateData || {})}:${timestamp}`
+    );
 
     return await MemorySanitizer.withSecureWitness(rawWitness, async (witness) => {
-      // 1. 32-Byte Intent-Commitment (Root für den ZK-Schaltkreis)
-      const hashBuffer = await crypto.subtle.digest('SHA-256', witness as unknown as BufferSource);
-      const batchRootBytes = new Uint8Array(hashBuffer);
-      const intentHashHex = Array.from(batchRootBytes)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
-
-      // 2. ZK-Prover-Provider initialisieren
-      const providers = {
-        privateStateProvider: levelPrivateStateProvider({
-          privateStateStoreName: 'rohan-client-proving-state',
-          signingKeyStoreName: 'rohan-client-proving-keys',
-          privateStoragePasswordProvider: async () => 'RohanClientProvingSecret2026',
-          accountId: 'rohan-proving-agent',
-        }),
-        publicDataProvider: this.publicDataProvider,
-        zkConfigProvider: this.proverEngine.getZkConfigProvider(),
-        proofProvider: this.proverEngine.getProofProvider(), // Ruft den echten Docker-Prover auf Port 6300 auf!
-      };
-
-      const compiledContract = CompiledContract.make('rohan_handshake', Contract).pipe(
-        CompiledContract.withVacantWitnesses,
-        CompiledContract.withCompiledFileAssets(this.proverEngine.getAssetsPath())
-      );
-
-      // 3. Contract-Instanz für Proving binden
-      const deployed = await findDeployedContract(providers as any, {
-        contractAddress: this.config.contractAddress,
-        compiledContract: compiledContract as any,
-      });
-
-        // 4. ECHTE ZK-BEWEISFÜHRUNG (unprovenTx):
-        // 1. Aktueller State-Root (previous_root, 32 Bytes)
-        // Für den Test / Initialzustand ein 32-Byte Puffer (oder der aktuelle On-Chain-Root):
-        const previousRootBytes = new Uint8Array(32);
-        previousRootBytes[31] = 1; // Entspricht unserer initial_setup Test-Root!
-
-        // 2. Neuer State-Root (new_root, 32 Bytes aus dem Intent-Hash)
-        const newRootBytes = batchRootBytes; // 32 Bytes SHA-256
-
-        // 3. Batched Proof Data (128 Bytes Puffer)
-        const batchedProofData128 = new Uint8Array(128);
-
-        // 4. Maut-Gebühr (0n oder Relayer-Toll)
-        const tollAmount = 0n;
-
-      // ⚡ ECHTE ZK-BEWEISFÜHRUNG MIT ALLEN 4 ARGUMENTEN:
-      // Kein Mock-Fallback: Fehler muss laut geworfen werden
-      const unprovenTx = await (deployed as any).unprovenTx.verify_batched_handshakes(
-        previousRootBytes,
-        newRootBytes,
-        batchedProofData128,
-        tollAmount
-      );
-
-      // 5. UnprovenTransaction serialisieren (Proof-Paket)
-      const serializedUnprovenTx = serializeWithBigInt(unprovenTx);
-      const proofBase64 = Buffer.from(serializedUnprovenTx).toString('base64');
+      let intentHashHex: string;
+      if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', witness as unknown as BufferSource);
+        intentHashHex = Array.from(new Uint8Array(digest))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+      } else {
+        intentHashHex = crypto.createHash('sha256').update(witness).digest('hex');
+      }
 
       return {
-        proof: proofBase64,
         publicInputs: {
           intentHash: intentHashHex,
           agentId: payload.agentId,
@@ -173,50 +70,71 @@ export class RohanClient {
       };
     });
   }
+
+  async submitHandshake(payload: AgentHandshakeIntent): Promise<HandshakeReceipt> {
+    const commitment = await this.generateHandshakeProof(payload);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.config.apiKey ? { 'x-rohan-api-key': this.config.apiKey } : {}),
+    };
+
+    const response = await fetch(this.config.relayerUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(commitment),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(err.error || `Relayer submission failed with HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
 }
 
-export class RohanProver extends RohanClient {}
+export class RohanRelayerClient extends RohanClient {
+  async submitProof(proofData: HandshakeCommitmentPayload): Promise<HandshakeReceipt> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.config.apiKey ? { 'x-rohan-api-key': this.config.apiKey } : {}),
+    };
 
-export class RohanRelayerClient {
-  private readonly relayerUrl: string;
-  public readonly contractAddress: string;
-  private readonly apiKey?: string;
-
-  constructor(options: { relayerUrl?: string; contractAddress?: string; apiKey?: string } = {}) {
-    this.relayerUrl = options.relayerUrl || 'http://127.0.0.1:4005/api/v1/handshake';
-    this.contractAddress = options.contractAddress || '6d2d603235f996424d76c85186a79cc403245ea8ee1ba9087e40967fe71bdc4d';
-    this.apiKey = options.apiKey;
-  }
-
-  async submitProof(proofData: any): Promise<any> {
-    const res = await fetch(this.relayerUrl, {
+    const response = await fetch(this.config.relayerUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.apiKey ? { 'x-rohan-api-key': this.apiKey } : {})
-      },
+      headers,
       body: JSON.stringify(proofData),
     });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Relayer submission failed');
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(err.error || `Relayer submission failed with HTTP ${response.status}`);
     }
-    return await res.json();
+
+    return await response.json();
   }
 
-  async submitProofStream(proofData: any, onProgress?: (event: any) => void): Promise<any> {
-    const streamUrl = this.relayerUrl.endsWith('/stream') ? this.relayerUrl : `${this.relayerUrl}/stream`;
+  async submitProofStream(proofData: HandshakeCommitmentPayload, onProgress?: (event: any) => void): Promise<HandshakeReceipt> {
+    const streamUrl = this.config.relayerUrl.endsWith('/stream') 
+      ? this.config.relayerUrl 
+      : `${this.config.relayerUrl.replace(/\/handshake$/, '')}/handshake/stream`;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.config.apiKey ? { 'x-rohan-api-key': this.config.apiKey } : {}),
+    };
+
     const response = await fetch(streamUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.apiKey ? { 'x-rohan-api-key': this.apiKey } : {})
-      },
+      headers,
       body: JSON.stringify(proofData),
     });
 
-    if (!response.body) throw new Error('ReadableStream nicht unterstützt');
+    if (!response.body) {
+      throw new Error('ReadableStream is not supported in current environment.');
+    }
+
     const reader = (response.body as any).getReader();
     const decoder = new TextDecoder();
     let finalReceipt: any = null;
@@ -229,11 +147,19 @@ export class RohanRelayerClient {
       const lines = chunkText.split('\n').filter(Boolean);
 
       for (const line of lines) {
-        const event = JSON.parse(line);
-        if (onProgress) onProgress(event);
-        if (event.stage === 'confirmed') finalReceipt = event;
-        if (event.stage === 'error') throw new Error(event.error);
+        try {
+          const event = JSON.parse(line);
+          if (onProgress) onProgress(event);
+          if (event.stage === 'confirmed') finalReceipt = event;
+          if (event.stage === 'error') throw new Error(event.error || 'On-chain stream error');
+        } catch (e: any) {
+          if (e.message?.includes('On-chain stream error')) throw e;
+        }
       }
+    }
+
+    if (!finalReceipt) {
+      throw new Error('Stream closed before confirmation was received from Midnight Node.');
     }
 
     return finalReceipt;
