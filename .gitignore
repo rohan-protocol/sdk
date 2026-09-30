@@ -28,3 +28,8 @@ node_modules/
 .private-state/
 *.py
 *.txt
+
+.env
+*.env
+api_keys.db*
+midnight-level-db

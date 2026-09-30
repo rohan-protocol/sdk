@@ -1,30 +1,20 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.rohan-protocol/mcp",
-  "title": "Rohan ZK Shield",
-  "description": "Zero-knowledge verification gateway for MCP handshakes and tool-boundary checks.",
-  "version": "0.5.2",
+  "$schema": "https://static.modelcontextprotocol.io/schema/server.json",
+  "name": "@rohan-protocol/mcp",
+  "version": "0.6.0",
+  "description": "Stateless zero-knowledge trust gateway for autonomous AI agents on Midnight Network.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rohan-protocol/sdk.git",
-    "source": "github"
+    "url": "https://github.com/rohan-protocol/rohan.git"
   },
-  "packages": [
-    {
-      "registryType": "npm",
-      "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "@rohan-protocol/mcp",
-      "version": "0.5.2",
-      "runtimeHint": "npx",
-      "transport": {
-        "type": "stdio"
-      }
-    }
-  ],
-  "remotes": [
-    {
-      "type": "streamable-http",
-      "url": "https://api.rohanprotocol.network/api/v1/handshake/stream"
-    }
-  ]
+  "homepage": "https://rohanprotocol.network",
+  "bugs": "https://github.com/rohan-protocol/rohan/issues",
+  "license": "MIT",
+  "runtime": "node",
+  "entrypoint": "packages/mcp/dist/server.js",
+  "transport": "stdio",
+  "environment": {
+    "ROHAN_CONTRACT_ADDRESS": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
+    "ROHAN_RELAYER_URL": "https://api.rohanprotocol.network/api/v1/handshake"
+  }
 }
