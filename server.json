@@ -2,10 +2,10 @@
   "$schema": "https://static.modelcontextprotocol.io/schema/server.json",
   "name": "@rohan-protocol/mcp",
   "version": "0.6.0",
-  "description": "Stateless zero-knowledge trust gateway for autonomous AI agents on Midnight Network.",
+  "description": "Stateless zero-knowledge trust gateway and WebMCP shield for autonomous AI agents on Midnight Network.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rohan-protocol/rohan.git"
+    "url": "https://github.com/rohan-protocol/sdk.git"
   },
   "homepage": "https://rohanprotocol.network",
   "bugs": "https://github.com/rohan-protocol/rohan/issues",
@@ -13,6 +13,16 @@
   "runtime": "node",
   "entrypoint": "packages/mcp/dist/server.js",
   "transport": "stdio",
+  "tags": [
+    "zero-knowledge",
+    "privacy",
+    "security",
+    "midnight-network",
+    "handshake",
+    "ai-agents",
+    "webmcp",
+    "firewall"
+  ],
   "environment": {
     "ROHAN_CONTRACT_ADDRESS": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
     "ROHAN_RELAYER_URL": "https://api.rohanprotocol.network/api/v1/handshake"

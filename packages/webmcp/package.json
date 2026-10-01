@@ -3,6 +3,17 @@
   "version": "0.6.0",
   "description": "Browser-Native Zero-Knowledge Shield for WebMCP and AI Web Agents",
   "type": "module",
+  "keywords": [
+    "webmcp",
+    "mcp",
+    "model-context-protocol",
+    "browser-mcp",
+    "zero-knowledge",
+    "midnight-network",
+    "zk-handshake",
+    "semantic-firewall",
+    "chrome-ai"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

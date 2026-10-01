@@ -5,6 +5,16 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "zero-knowledge",
+    "ai-agents",
+    "midnight-network",
+    "zk-handshake",
+    "semantic-firewall"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js"

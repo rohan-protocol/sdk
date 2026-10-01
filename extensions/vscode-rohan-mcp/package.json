@@ -1,0 +1,54 @@
+{
+  "name": "rohan-mcp-shield",
+  "displayName": "Rohan Protocol – Zero-Knowledge MCP Shield & WebMCP Gateway",
+  "description": "Zero-Knowledge trust gateway and semantic prompt-injection firewall for AI agents (Claude, Copilot, Cline, Roo Code, Google ADK) on Midnight Network.",
+  "version": "0.6.0",
+  "publisher": "rohan-protocol",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Security"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "zero-knowledge",
+    "midnight-network",
+    "ai-agents",
+    "privacy",
+    "copilot",
+    "cline",
+    "roo-code"
+  ],
+  "homepage": "https://rohanprotocol.network",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohan-protocol/rohan.git"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "rohan.configureMcp",
+        "title": "Rohan: Configure Zero-Knowledge MCP for Claude / Cline / Copilot"
+      },
+      {
+        "command": "rohan.testHandshake",
+        "title": "Rohan: Test Zero-Knowledge Handshake on Midnight"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.5.0"
+  }
+}

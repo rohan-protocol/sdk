@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "rohan-protocol": {
+      "command": "npx",
+      "args": ["-y", "@rohan-protocol/mcp@latest"],
+      "env": {
+        "ROHAN_CONTRACT_ADDRESS": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
+        "ROHAN_RELAYER_URL": "https://api.rohanprotocol.network/api/v1/handshake",
+        "ROHAN_FIREWALL_LEVEL": "V-01_STRICT"
+      }
+    }
+  }
+}
