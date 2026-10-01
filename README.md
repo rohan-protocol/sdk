@@ -1,7 +1,7 @@
 <h1 align="center">Rohan Protocol</h1>
 
 <p align="center">
-  <strong>v0.6.0 Provides gasless intent attestations and cryptographic settlement on Midnight Preprod.</strong><br>
+  <strong>Stateless zero-knowledge trust and gasless settlement layer for autonomous AI agents.</strong><br>
   <em>Universal MCP gateway, WebMCP browser shield, and zero-leakage cryptographic state machine on Midnight.</em>
 </p>
 
@@ -52,6 +52,7 @@ Rohan shifts the security perimeter from network firewalls to **stateless, clien
 
 Clients allocate and wipe sensitive witnesses in RAM using hardware-level memory sanitization (`zeroize`). Cryptographic commitments are transmitted via **Streamable HTTP (NDJSON)** to the sovereign **Rohan Relayer Pool**, which sponsors execution fees (`$tDUST`) and anchors state transitions on the **Midnight Blockchain**.
 
+```text
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                          AUTONOMOUS AGENT RUNTIME                             │
 │     Claude Desktop / Cursor IDE         │        Web Copilots / React Apps    │
@@ -159,7 +160,7 @@ import { RohanClient } from "@rohan-protocol/sdk";
 // Initialize client (defaults to live Midnight Preprod settlement)
 const client = new RohanClient({
   contractAddress: "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
-  relayerUrl: "https://api.rohanprotocol.network/api/v1/handshake",
+  relayerUrl: "https://api.rohanprotocol.network", // Automatically normalizes to /api/v1/handshake
   apiKey: process.env.ROHAN_API_KEY // Optional: 10 handshakes/day free sandbox
 });
 
@@ -182,7 +183,7 @@ code TypeScript
 import { RohanRelayerClient } from "@rohan-protocol/sdk";
 
 const relayer = new RohanRelayerClient({
-  relayerUrl: "https://api.rohanprotocol.network/api/v1/handshake",
+  relayerUrl: "https://api.rohanprotocol.network",
   apiKey: process.env.ROHAN_API_KEY
 });
 
