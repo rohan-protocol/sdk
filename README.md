@@ -1,7 +1,7 @@
 <h1 align="center">Rohan Protocol</h1>
 
 <p align="center">
-  <strong>The stateless zero-knowledge trust and security layer for autonomous AI agents.</strong><br>
+  <strong>v0.6.0 Provides gasless intent attestations and cryptographic settlement on Midnight Preprod.</strong><br>
   <em>Universal MCP gateway, WebMCP browser shield, and zero-leakage cryptographic state machine on Midnight.</em>
 </p>
 
@@ -52,7 +52,6 @@ Rohan shifts the security perimeter from network firewalls to **stateless, clien
 
 Clients allocate and wipe sensitive witnesses in RAM using hardware-level memory sanitization (`zeroize`). Cryptographic commitments are transmitted via **Streamable HTTP (NDJSON)** to the sovereign **Rohan Relayer Pool**, which sponsors execution fees (`$tDUST`) and anchors state transitions on the **Midnight Blockchain**.
 
-```text
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │                          AUTONOMOUS AGENT RUNTIME                             │
 │     Claude Desktop / Cursor IDE         │        Web Copilots / React Apps    │
