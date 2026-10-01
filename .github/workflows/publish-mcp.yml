@@ -3,7 +3,7 @@ name: Publish to Official MCP Registry
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -21,12 +21,27 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: "npm"
+          node-version: 22
 
-      - name: Install Dependencies & Build
+      - name: Install Root Dependencies
+        run: npm install
+
+      - name: Build SDK
+        working-directory: packages/sdk
         run: |
-          npm ci
+          npm install
+          npm run build
+
+      - name: Build WebMCP
+        working-directory: packages/webmcp
+        run: |
+          npm install
+          npm run build
+
+      - name: Build MCP
+        working-directory: packages/mcp
+        run: |
+          npm install
           npm run build
 
       - name: Install & Run MCP Publisher
