@@ -1,0 +1,10 @@
+relayer-node
+midnight-local-dev
+packages/*/node_modules
+packages/*/dist
+.git
+.github
+tests
+tools
+*.db*
+.env*
