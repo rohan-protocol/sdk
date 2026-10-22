@@ -24,26 +24,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Install Root Dependencies
+      - name: Install monorepo dependencies
         run: npm install
 
-      - name: Build SDK
-        working-directory: packages/sdk
-        run: |
-          npm install
-          npm run build
-
-      - name: Build WebMCP
-        working-directory: packages/webmcp
-        run: |
-          npm install
-          npm run build
-
-      - name: Build MCP
-        working-directory: packages/mcp
-        run: |
-          npm install
-          npm run build
+      - name: Build workspaces
+        run: npm run build
 
       - name: Run Monorepo Automated Tests
         run: npm test

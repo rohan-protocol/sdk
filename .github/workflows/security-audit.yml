@@ -23,25 +23,8 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Audit Root
-        run: |
-          npm install --package-lock-only
-          npm audit --audit-level=high
+      - name: Install workspace dependencies
+        run: npm install
 
-      - name: Audit SDK Package
-        working-directory: packages/sdk
-        run: |
-          npm install --package-lock-only
-          npm audit --audit-level=high
-
-      - name: Audit MCP Package
-        working-directory: packages/mcp
-        run: |
-          npm install --package-lock-only
-          npm audit --audit-level=high
-
-      - name: Audit WebMCP Package
-        working-directory: packages/webmcp
-        run: |
-          npm install --package-lock-only
-          npm audit --audit-level=high
+      - name: Audit monorepo dependencies
+        run: npm audit --audit-level=high

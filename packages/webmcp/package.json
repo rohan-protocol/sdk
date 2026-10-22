@@ -36,7 +36,7 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@rohan-protocol/sdk": "^0.6.2"
+    "@rohan-protocol/sdk": "*"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
