@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "@rohan-protocol/sdk": "^0.6.2"
+    "@rohan-protocol/sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "*",
