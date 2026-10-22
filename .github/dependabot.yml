@@ -5,13 +5,26 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x", "8.x"]
+      - dependency-name: "@types/node"
+        versions: ["23.x", "24.x", "25.x", "26.x"]
+      - dependency-name: "react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "react-dom"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react-dom"
+        versions: ["19.x", "20.x"]
     groups:
       midnight-deps:
         patterns:
@@ -22,13 +35,26 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x", "8.x"]
+      - dependency-name: "@types/node"
+        versions: ["23.x", "24.x", "25.x", "26.x"]
+      - dependency-name: "react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "react-dom"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react-dom"
+        versions: ["19.x", "20.x"]
     groups:
       midnight-deps:
         patterns:
@@ -39,23 +65,49 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x", "8.x"]
+      - dependency-name: "@types/node"
+        versions: ["23.x", "24.x", "25.x", "26.x"]
+      - dependency-name: "react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "react-dom"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react-dom"
+        versions: ["19.x", "20.x"]
 
   - package-ecosystem: "npm"
     directory: "/packages/webmcp"
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "security"
     commit-message:
       prefix: "deps"
       include: "scope"
+    ignore:
+      - dependency-name: "typescript"
+        versions: ["7.x", "8.x"]
+      - dependency-name: "@types/node"
+        versions: ["23.x", "24.x", "25.x", "26.x"]
+      - dependency-name: "react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "react-dom"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react"
+        versions: ["19.x", "20.x"]
+      - dependency-name: "@types/react-dom"
+        versions: ["19.x", "20.x"]
