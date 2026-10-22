@@ -22,7 +22,7 @@
 
 </div>
 
-> ⚠️ Public Beta (v0.6.0): Rohan currently enforces client-side RAM witness isolation, V-01 semantic policy firewalls, and V-02 deterministic memory zeroization (zeroize) to shield MCP tool calls while native client-side WASM ZK-SNARK proving circuits are under active research (Milestone 1).
+> ⚠️ Public Beta (v0.6.2): Rohan currently enforces client-side RAM witness isolation, V-01 semantic policy firewalls, and V-02 deterministic memory zeroization (zeroize) to shield MCP tool calls while native client-side WASM ZK-SNARK proving circuits are under active research (Milestone 1).
 
 ## ⚡ The Problem: Plaintext Context Leaks in MCP
 

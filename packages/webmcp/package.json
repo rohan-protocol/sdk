@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/webmcp",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Browser-Native Zero-Knowledge Shield for WebMCP and AI Web Agents",
   "type": "module",
   "keywords": [
@@ -28,14 +28,15 @@
   ],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "node --test tests/*.test.js"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@rohan-protocol/sdk": "^0.6.0"
+    "@rohan-protocol/sdk": "*"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

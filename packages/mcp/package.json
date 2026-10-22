@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/mcp",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Model Context Protocol (MCP) Gateway for Rohan Protocol ZK-Handshakes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,14 +17,15 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "@rohan-protocol/sdk": "^0.6.2"
+    "@rohan-protocol/sdk": "*"
   },
   "devDependencies": {
-    "@types/node": "*",
+    "@types/node": "^22.0.0",
     "typescript": "^5.5.0"
   },
   "bin": "./dist/server.js"

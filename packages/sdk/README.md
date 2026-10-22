@@ -1,6 +1,6 @@
 # @rohan-protocol/sdk
 
-[![NPM Version](https://img.shields.io/badge/NPM-v0.6.0-blue?style=for-the-badge)](https://www.npmjs.com/package/@rohan-protocol/sdk)
+[![NPM Version](https://img.shields.io/badge/NPM-v0.6.2-blue?style=for-the-badge)](https://www.npmjs.com/package/@rohan-protocol/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 **Stateless zero-knowledge trust and commitment layer for autonomous AI agents.**  
