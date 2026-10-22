@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@rohan-protocol/sdk": "^0.6.0"
+    "@rohan-protocol/sdk": "^0.6.2"
   },
   "devDependencies": {
     "@types/node": "*",
