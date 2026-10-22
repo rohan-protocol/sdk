@@ -15,17 +15,20 @@ RUN npm install && npm run build && npm pack
 WORKDIR /app/packages/mcp
 RUN npm install && npm install /app/packages/sdk/rohan-protocol-sdk-*.tgz && npm run build
 
-# Stage 2: Minimaler Runner für Glama & Smithery
+# Stage 2: Minimaler gehärteter Runner für Glama & Smithery
 FROM node:22-alpine AS runner
 
 WORKDIR /app/packages/mcp
 
-# Nur das fertige MCP-Paket mit seinen gebauten Abhängigkeiten kopieren
-COPY --from=builder /app/packages/mcp ./
+# Sicherheits-Hardening: Nicht-Root-Benutzer 'node' verwenden
+COPY --from=builder --chown=node:node /app/packages/mcp ./
 
 ENV NODE_ENV=production
 ENV ROHAN_CONTRACT_ADDRESS=585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e
 ENV ROHAN_RELAYER_URL=https://api.rohanprotocol.network/api/v1/handshake
 ENV ROHAN_FIREWALL_LEVEL=V-01_STRICT
+
+# Unprivilegierter User (UID 1000)
+USER node
 
 ENTRYPOINT ["node", "dist/server.js"]
