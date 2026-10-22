@@ -1,6 +1,6 @@
 @rohan-protocol/mcp
 
-![Bild](https://img.shields.io/badge/NPM-v0.6.0-blue?style=for-the-badge)
+![Bild](https://img.shields.io/badge/NPM-v0.6.2-blue?style=for-the-badge)
 ![Bild](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 Official Model Context Protocol (MCP) server for Rohan Protocol.

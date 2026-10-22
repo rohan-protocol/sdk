@@ -1,15 +1,21 @@
 {
   "name": "rohan-protocol",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
-  "description": "Rohan Protocol \u2013 Zero-Knowledge Agent Handshake Monorepo",
+  "description": "Rohan Protocol – Zero-Knowledge Agent Handshake Monorepo",
   "scripts": {
     "build": "npm run build --prefix packages/sdk && npm run build --prefix packages/webmcp && npm run build --prefix packages/mcp",
-    "clean": "npm run clean --prefix packages/sdk && npm run clean --prefix packages/webmcp"
+    "clean": "npm run clean --prefix packages/sdk && npm run clean --prefix packages/webmcp",
+    "test": "npm run test --workspaces --if-present"
   },
   "overrides": {
     "@midnight-ntwrk/compact-js": "2.5.3",
     "@midnight-ntwrk/compact-runtime": "0.15.0",
     "@midnight-ntwrk/ledger-v8": "8.0.3"
-  }
+  },
+  "workspaces": [
+    "packages/sdk",
+    "packages/mcp",
+    "packages/webmcp"
+  ]
 }

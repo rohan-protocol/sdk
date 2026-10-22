@@ -1,6 +1,6 @@
 @rohan-protocol/webmcp
 
-![Bild](https://img.shields.io/badge/NPM-v0.6.0-blue?style=for-the-badge)
+![Bild](https://img.shields.io/badge/NPM-v0.6.2-blue?style=for-the-badge)
 ![Bild](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 Browser-native WebMCP shield with client-side memory sanitization.

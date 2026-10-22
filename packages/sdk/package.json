@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "build": "tsc && rm -rf dist/generated && cp -r src/generated dist/generated",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-js": "2.5.1",
