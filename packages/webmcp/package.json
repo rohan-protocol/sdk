@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/webmcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Browser-Native Zero-Knowledge Shield for WebMCP and AI Web Agents",
   "type": "module",
   "keywords": [

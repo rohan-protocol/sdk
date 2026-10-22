@@ -1,6 +1,6 @@
 {
   "name": "@rohan-protocol/mcp",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Model Context Protocol (MCP) Gateway for Rohan Protocol ZK-Handshakes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
