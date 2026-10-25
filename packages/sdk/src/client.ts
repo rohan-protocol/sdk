@@ -12,7 +12,10 @@ import type {
  */
 function normalizeRelayerUrl(url?: string): string {
   if (!url) return 'https://api.rohanprotocol.network/api/v1/handshake';
-  const clean = url.replace(/\/+$/, '');
+  let clean = url.trim();
+  while (clean.endsWith('/')) {
+    clean = clean.slice(0, -1);
+  }
   if (clean.endsWith('/api/v1/handshake') || clean.endsWith('/api/v1/handshake/stream')) {
     return clean;
   }
