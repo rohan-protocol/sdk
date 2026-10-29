@@ -1,49 +1,85 @@
-# @rohan-protocol/sdk
+# @rohan-protocol/sdk (v0.7.0)
 
-[![NPM Version](https://img.shields.io/badge/NPM-v0.6.2-blue?style=for-the-badge)](https://www.npmjs.com/package/@rohan-protocol/sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-
-**Stateless zero-knowledge trust and commitment layer for autonomous AI agents.**  
-Client-side memory sanitation (zeroize), zero-Docker dependency, and gasless state settlement on Midnight Blockchain.
+Zero-Docker TypeScript client library for confidential state transitions, cryptographic commitments, and on-chain state inspection on the Midnight Blockchain.
 
 ---
 
-## Features
-
-- **Zero Docker Requirement:** Pure TypeScript/WebCrypto runtime. No local proof server containers required for client developers.
-- **Hardware-Level Memory Hygiene (V-02):** Cryptographically secures and wipes private witnesses from memory using `MemorySanitizer`.
-- **Gasless L1 Settlement:** Settle verifiable state transitions on Midnight Preprod without managing Lace wallets, seed phrases, or native `$tDUST` balances.
-- **Streamable HTTP (NDJSON):** Real-time progressive settlement telemetry for long-lived AI agent pipelines.
-
----
-
-## Installation
+## 📦 Installation
 
 ```bash
 npm install @rohan-protocol/sdk
+```
 
-Quickstart
-code TypeScript
+---
 
-import { RohanClient } from "@rohan-protocol/sdk";
+## 🌟 Key Features
 
-// Initialize client with live Midnight Preprod settlement
+* **Zero-Docker Client Stack:** In-memory cryptographic witness synthesis and SHA-256 Intent Commitments without container virtualization.
+* **RFC 8785 Canonicalization (`canonicalizeJson`):** Strict, deterministic JSON Canonicalization Scheme.
+* **On-Chain State Inspection (`getLedgerState`):** 0 Gas, cached state root and block height queries.
+* **In-Memory Audit Engine (`verifyCommitment`):** Instant verification of confidential payloads against intent commitments.
+* **Memory Sanitation (`MemorySanitizer`):** Zeroizes sensitive witness buffers after cryptographic operations.
+
+---
+
+## 💻 API Reference & Code Examples
+
+### 1. Initialize Client
+
+```typescript
+import { RohanClient } from '@rohan-protocol/sdk';
+
 const client = new RohanClient({
-  contractAddress: "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
-  relayerUrl: "https://api.rohanprotocol.network", // Automatically normalizes to /api/v1/handshake
-  apiKey: process.env.ROHAN_API_KEY // Optional: 10 handshakes/day sandbox included
+  contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
+  relayerUrl: 'https://api.rohanprotocol.network/api/v1/handshake',
+  apiKey: 'rohan_live_...' // Optional: Leave empty for free sandbox
 });
+```
 
-// Commit confidential intent & anchor on Midnight
+### 2. Inspect Anchored Ledger State (Read / Inspect)
+
+```typescript
+const state = await client.getLedgerState();
+console.log(state);
+// {
+//   success: true,
+//   contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
+//   currentStateRoot: '1eaf4a0cd4e7dea3a969885c65193240ee5d68039dba0c162765a6c9b82eb6d7',
+//   blockHeight: 3192001,
+//   lastTxHash: 'da2d26611dc37d6c6914d317762d46a5944ad42c3100129630e9e6fad638000a',
+//   cacheAgeMs: 154,
+//   cacheTtlMs: 15000,
+//   isMinedOnChain: true
+// }
+```
+
+### 3. Verify a Confidential Commitment (Audit / Verify)
+
+```typescript
+const audit = await client.verifyCommitment(
+  { deal: 'Acquisition', valuationUsd: 5000000 },
+  'sha256:7f465a3d7e5d8ecae5e3b9aaec54b9cb76136be9f2a0df8b2c4cfa0980dfd322'
+);
+
+if (audit.valid) {
+  console.log('✅ Agreement verified byte-for-byte against on-chain commitment!');
+}
+```
+
+### 4. Execute a Handshake (Write / Settle)
+
+```typescript
 const receipt = await client.submitHandshake({
-  agentId: "did:midnight:agent-alpha-01",
-  intent: "execute_confidential_sla_settlement",
-  privateData: { clearanceLevel: "TIER_1", dealValueUsd: 150000 }
+  agentId: 'did:midnight:agent-104',
+  intent: 'Procurement Settlement',
+  privateData: { vendorIban: 'DE89370400440532013000', amountEur: 12500 }
 });
+console.log('Settlement TxHash:', receipt.txHash);
+console.log('Anchored IntentHash:', receipt.intentHash);
+```
 
-console.log(`✅ On-chain settlement confirmed: ${receipt.txHash}`);
-console.log(`   Status: ${receipt.status}`);
+---
 
-License
+## 📜 License
 
-MIT © Rohan Protocol. Built for the autonomous agentic economy on Midnight.
+Apache-2.0

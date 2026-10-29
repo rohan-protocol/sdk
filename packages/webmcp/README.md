@@ -1,51 +1,25 @@
-@rohan-protocol/webmcp
+# @rohan-protocol/webmcp (v0.7.0)
 
-![Bild](https://img.shields.io/badge/NPM-v0.6.2-blue?style=for-the-badge)
-![Bild](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
+Browser-native WebMCP Shield with Zero-Width Unicode Sanitization (V-07) and in-memory cryptographic commitment generation.
 
-Browser-native WebMCP shield with client-side memory sanitization.
-Protects front-end copilots and React applications from zero-width Unicode injection attacks and leaks.
-Features
+---
 
-    Zero-Width Unicode Defense (V-07): Sanitizes inputs against invisible Unicode character smuggling [\u200B-\u200D\uFEFF].
+## 📦 Installation
 
-    In-Memory Witness Zeroization (V-02): Scrubs private web form fields and prompt inputs from browser memory.
-
-    React Hooks & Provider: 3-line drop-in integration for Next.js, React, and browser extensions.
-
-Installation
-code Bash
-
+```bash
 npm install @rohan-protocol/webmcp
+```
 
-Quickstart
-code Tsx
+---
 
-import { RohanWebMcpProvider, useRohanWebMcp } from '@rohan-protocol/webmcp';
+## 🌟 Browser-Native Features
 
-export default function App() {
-  return (
-    <RohanWebMcpProvider apiKey={process.env.NEXT_PUBLIC_ROHAN_API_KEY}>
-      <YourAgentInterface />
-    </RohanWebMcpProvider>
-  );
-}
+* **Zero-Width Character Sanitizer (V-07):** Strips invisible Unicode steganography and prompt-injection vectors from DOM inputs before processing.
+* **SubtleCrypto Native Hashing:** Derives 32-byte SHA-256 intent commitments directly via `window.crypto.subtle` in client RAM.
+* **Safe In-Memory Zeroize:** Clears sensitive witness buffers on client execution completion.
 
-function YourAgentInterface() {
-  const { shieldAndSubmit, isProving } = useRohanWebMcp();
+---
 
-  const handleAction = async () => {
-    const receipt = await shieldAndSubmit({
-      agentId: "did:midnight:web-agent",
-      intent: "submit_confidential_web_intent",
-      formData: { email: "partner@example.com", termsAccepted: true }
-    });
-    console.log("Confirmed on Midnight:", receipt.txHash);
-  };
+## 📜 License
 
-  return <button onClick={handleAction} disabled={isProving}>Execute ZK Handshake</button>;
-}
-
-License
-
-MIT © Rohan Protocol.
+Apache-2.0
