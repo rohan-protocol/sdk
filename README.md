@@ -103,11 +103,6 @@ console.log('Cryptographic match?', audit.valid);
 
 ---
 
-## 📈 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=rohan-protocol/sdk&type=Date)](https://star-history.com/#rohan-protocol/sdk&Date)
-
----
 
 ## 📜 License
 
