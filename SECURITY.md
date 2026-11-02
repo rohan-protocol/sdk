@@ -10,7 +10,8 @@ Only the latest major/minor releases receive active security updates and cryptog
 
 | Package / Version | Supported | Notes |
 | :--- | :--- | :--- |
-| **`@rohan-protocol/* >= 0.6.0`** | :white_check_mark: | Active production release (Contract: `585ac0c...`) |
+| **`@rohan-protocol/* >= 0.7.0`** | :white_check_mark: | Current production release (Contract: `585ac0c...`) |
+| `@rohan-protocol/* >= 0.6.0` | :white_check_mark: | Maintenance & security patches |
 | `@rohan-protocol/* < 0.6.0` | :x: | Deprecated prototypes & pre-release builds |
 
 ---
