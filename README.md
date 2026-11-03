@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod%20Verified-purple?style=flat-square)](https://midnight.network)
 [![Smithery Verified](https://img.shields.io/badge/Smithery-Verified-green?style=flat-square)](https://smithery.ai/servers/rohanprotocol/shield)
-[![Glama Grade](https://img.shields.io/badge/Glama-Grade%20A%20(5.0)-brightgreen?style=flat-square)](https://glama.ai/mcp/servers/rohan-protocol/shield)
+[![Glama Grade](https://img.shields.io/badge/Glama-Verified-brightgreen?style=flat-square)](https://glama.ai/mcp/servers/rohan-protocol/shield)
 
 > **The Sovereign Privacy & Settlement Layer for Autonomous AI Agents on the Midnight Blockchain.**
 
