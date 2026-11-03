@@ -1,30 +1,39 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schema/server.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.rohan-protocol/mcp",
-  "version": "0.7.0",
+  "title": "Rohan Protocol MCP",
   "description": "Stateless zero-knowledge trust gateway and WebMCP shield for AI agents on Midnight.",
+  "version": "0.7.0",
+  "websiteUrl": "https://rohanprotocol.network",
   "repository": {
-    "type": "git",
-    "url": "https://github.com/rohan-protocol/sdk.git"
+    "url": "https://github.com/rohan-protocol/sdk",
+    "source": "github",
+    "subfolder": "packages/mcp"
   },
-  "homepage": "https://rohanprotocol.network",
-  "bugs": "https://github.com/rohan-protocol/sdk/issues",
-  "license": "MIT",
-  "runtime": "node",
-  "entrypoint": "packages/mcp/dist/server.js",
-  "transport": "stdio",
-  "tags": [
-    "zero-knowledge",
-    "privacy",
-    "security",
-    "midnight-network",
-    "handshake",
-    "ai-agents",
-    "webmcp",
-    "firewall"
-  ],
-  "environment": {
-    "ROHAN_CONTRACT_ADDRESS": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
-    "ROHAN_RELAYER_URL": "https://api.rohanprotocol.network/api/v1/handshake"
-  }
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@rohan-protocol/mcp",
+      "version": "0.7.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ROHAN_CONTRACT_ADDRESS",
+          "description": "Midnight Preprod Contract Address for Rohan Trust Gateway",
+          "default": "585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "ROHAN_RELAYER_URL",
+          "description": "Rohan Relayer API URL",
+          "default": "https://api.rohanprotocol.network/api/v1/handshake",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
 }
