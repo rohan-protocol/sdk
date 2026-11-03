@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schema/server.json",
-  "name": "io.github.rohan-protocol.mcp",
+  "name": "io.github.rohan-protocol/mcp",
   "version": "0.7.0",
   "description": "Stateless zero-knowledge trust gateway and WebMCP shield for AI agents on Midnight.",
   "repository": {
