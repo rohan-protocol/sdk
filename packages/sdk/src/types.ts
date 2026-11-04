@@ -34,3 +34,20 @@ export interface HandshakeReceipt {
   engine?: string;
   timestamp: number;
 }
+
+export interface TransactionRecord {
+  txHash: string;
+  stateRoot: string;
+  intentHash: string;
+  blockHeight: number | null;
+  status: string;
+  timestamp: number;
+}
+
+export interface TransactionHistoryResponse {
+  success: boolean;
+  contractAddress: string;
+  network: string;
+  count: number;
+  transactions: TransactionRecord[];
+}

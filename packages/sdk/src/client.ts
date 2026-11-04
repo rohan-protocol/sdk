@@ -5,7 +5,8 @@ import type {
   RohanConfig, 
   AgentHandshakeIntent, 
   HandshakeCommitmentPayload, 
-  HandshakeReceipt 
+  HandshakeReceipt,
+  TransactionHistoryResponse
 } from './types.js';
 
 export interface LedgerState {
@@ -56,6 +57,15 @@ function resolveLedgerStateUrl(relayerUrl: string): string {
     base = base.slice(0, -1);
   }
   return base.replace(/\/api\/v1\/handshake(?:\/stream)?$/, '') + '/api/v1/ledger-state';
+}
+
+function resolveTransactionHistoryUrl(relayerUrl: string, limit: number): string {
+  let base = relayerUrl.trim();
+  while (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+  const origin = base.replace(/\/api\/v1\/handshake(?:\/stream)?$/, '');
+  return `${origin}/api/v1/transactions?limit=${limit}`;
 }
 
 export class RohanClient {
@@ -157,6 +167,28 @@ export class RohanClient {
     return await response.json();
   }
 
+  async getTransactionHistory(limit = 10): Promise<TransactionHistoryResponse> {
+    const boundedLimit = Math.min(Math.max(1, Math.trunc(Number(limit) || 10)), 50);
+    const url = resolveTransactionHistoryUrl(this.config.relayerUrl, boundedLimit);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(this.config.apiKey ? { 'x-rohan-api-key': this.config.apiKey } : {}),
+    };
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(err.error || `Failed to fetch transaction history with HTTP ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
   /**
    * [TASK 2.1 / BLOCK 2] - Pure in-memory cryptographic verification of intent commitment.
    * RFC 8785 JCS canonicalization + SHA-256. Zero gas cost.
@@ -196,7 +228,10 @@ export class RohanClient {
       computedDigest = crypto.createHash('sha256').update(canonicalPayload, 'utf8').digest('hex').toLowerCase();
     }
 
-    const match = computedDigest === cleanExpected;
+    const match = crypto.timingSafeEqual(
+      Buffer.from(computedDigest, 'hex'),
+      Buffer.from(cleanExpected, 'hex')
+    );
 
     return {
       valid: match,

@@ -12,7 +12,11 @@ export class SemanticFirewall {
     if (!intent.agentId || typeof intent.agentId !== 'string' || intent.agentId.length > 128) {
       return false;
     }
-    if (!intent.action || (intent.action !== 'rohan_zk_handshake' && intent.action !== 'verify_batched_handshakes')) {
+    if (!intent.action || (
+      intent.action !== 'rohan_zk_handshake' &&
+      intent.action !== 'rohan_execute_handshake' &&
+      intent.action !== 'verify_batched_handshakes'
+    )) {
       return false;
     }
     if (!intent.payload || typeof intent.payload !== 'object') {

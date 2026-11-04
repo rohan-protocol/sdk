@@ -17,33 +17,35 @@ Rohan Protocol equips autonomous AI agents with zero-knowledge intent commitment
 Rohan Protocol eliminates the classic "dead-end" MCP agent problem by establishing a complete, multi-turn lifecycle between coordinating agents:
 
 ```text
-┌──────────────────────┐   ┌──────────────────────┐   ┌──────────────────────┐
-│     Agent Alpha      │   │      Agent Beta      │   │      Agent Beta      │
-│   (State Mutation)   │   │  (State Inspection)  │   │  (Agreement Audit)   │
-└──────────┬───────────┘   └──────────┬───────────┘   └──────────┬───────────┘
-           │                          │                          │
-           │ 1. rohan_zk_handshake    │ 2. rohan_get_ledger_state│ 3. rohan_verify_commitment
-           │    (Confidential Payload)│    (Read Anchored Root)  │    (RFC 8785 In-Memory JCS)
-           ▼                          ▼                          ▼
+┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐
+│    Agent Alpha    │   │    Agent Beta     │   │    Agent Beta     │   │    Agent Beta     │
+│ (State Mutation)  │   │ (State Inspection)│   │ (History Review)  │   │ (Agreement Audit) │
+└─────────┬─────────┘   └─────────┬─────────┘   └─────────┬─────────┘   └─────────┬─────────┘
+          │                       │                       │                       │
+          │ 1. rohan_execute_handshake│ 2. rohan_get_ledger_state│ 3. rohan_get_transaction_history│ 4. rohan_verify_commitment
+          │    (Confidential Payload)│    (Read Anchored Root) │    (Settlement Receipts) │    (RFC 8785 In-Memory JCS)
+          ▼                       ▼                       ▼                       ▼
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
 │                                 Rohan Protocol Relayer                                 │
 │                     Midnight Preprod L1 Settlement & Paymaster                         │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-* **Step 1 — Write (`rohan_zk_handshake`):** Agent Alpha commits an intent. The Relayer verifies proof commitments and anchors the state root on Midnight Preprod L1.
+* **Step 1 — Write (`rohan_execute_handshake`):** Agent Alpha commits an intent. The Relayer verifies proof commitments and anchors the state root on Midnight Preprod L1. The legacy `rohan_zk_handshake` name remains accepted.
 * **Step 2 — Read (`rohan_get_ledger_state`):** Agent Beta inspects the contract's anchored state root, block height, and transaction receipt from cache (0 Gas, <1 ms).
-* **Step 3 — Verify (`rohan_verify_commitment`):** Agent Beta mathematically audits received plaintext against the on-chain commitment in local RAM (0 Gas, 0 ms).
+* **Step 3 — History (`rohan_get_transaction_history`):** Agent Beta lists recorded settlement transactions and receipts (0 Gas).
+* **Step 4 — Verify (`rohan_verify_commitment`):** Agent Beta checks plaintext against its canonical SHA-256 payload digest in local RAM (0 Gas). This is the inner payload digest, not the outer on-chain `intentHash`.
 
 ---
 
-## 🛠️ The 3 MCP Lifecycle Tools
+## 🛠️ The 4 MCP Lifecycle Tools
 
 | Tool | Category | Gas Cost | Latency | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `rohan_zk_handshake` | Mutation / Write | Subsidized (Paymaster) | ~30s (L1 Block) | Executes a confidential state transition anchored on Midnight Preprod. |
-| `rohan_verify_commitment` | Audit / Verify | 0 Gas | <1 ms (Local RAM) | Cryptographically audits plaintext against on-chain commitments via RFC 8785 JCS + SHA-256. |
+| `rohan_execute_handshake` | Mutation / Write | Subsidized (Paymaster) | ~30s (L1 Block) | Executes a confidential state transition anchored on Midnight Preprod. The legacy `rohan_zk_handshake` alias is accepted. |
 | `rohan_get_ledger_state` | Inspection / Read | 0 Gas | <1 ms (RAM Cache) | Reads current anchored state root, block height, and tx receipt from the 15s write-through cache. |
+| `rohan_get_transaction_history` | Inspection / Read | 0 Gas | <1 ms (SQLite) | Lists recent recorded settlement transactions and receipts. |
+| `rohan_verify_commitment` | Audit / Verify | 0 Gas | <1 ms (Local RAM) | Checks plaintext against its payload digest via RFC 8785 JCS + SHA-256; supply the inner payload digest, not the outer on-chain `intentHash`. |
 
 ---
 

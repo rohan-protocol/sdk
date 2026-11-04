@@ -11,6 +11,15 @@ test('SemanticFirewall: valid intent passes validation', () => {
   assert.equal(SemanticFirewall.validate(intent), true);
 });
 
+test('SemanticFirewall: standardized execute handshake action passes validation', () => {
+  const intent = {
+    agentId: 'agent-12345',
+    action: 'rohan_execute_handshake',
+    payload: { state: 'ready', amount: 100 }
+  };
+  assert.equal(SemanticFirewall.validate(intent), true);
+});
+
 test('SemanticFirewall: verify_batched_handshakes passes validation', () => {
   const intent = {
     agentId: 'agent-batcher',

@@ -17,7 +17,8 @@ npm install @rohan-protocol/sdk
 * **Zero-Docker Client Stack:** In-memory cryptographic witness synthesis and SHA-256 Intent Commitments without container virtualization.
 * **RFC 8785 Canonicalization (`canonicalizeJson`):** Strict, deterministic JSON Canonicalization Scheme.
 * **On-Chain State Inspection (`getLedgerState`):** 0 Gas, cached state root and block height queries.
-* **In-Memory Audit Engine (`verifyCommitment`):** Instant verification of confidential payloads against intent commitments.
+* **Settlement History (`getTransactionHistory`):** 0 Gas, read-only access to the relayer's recent transaction receipts.
+* **In-Memory Audit Engine (`verifyCommitment`):** Verifies the canonical SHA-256 digest of a confidential payload; use the inner payload digest, not the timestamp-salted on-chain `intentHash`.
 * **Memory Sanitation (`MemorySanitizer`):** Zeroizes sensitive witness buffers after cryptographic operations.
 
 ---
@@ -40,7 +41,9 @@ const client = new RohanClient({
 
 ```typescript
 const state = await client.getLedgerState();
+const history = await client.getTransactionHistory(10);
 console.log(state);
+console.log(history);
 // {
 //   success: true,
 //   contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
@@ -62,7 +65,7 @@ const audit = await client.verifyCommitment(
 );
 
 if (audit.valid) {
-  console.log('✅ Agreement verified byte-for-byte against on-chain commitment!');
+  console.log('✅ Payload matches its canonical SHA-256 digest!');
 }
 ```
 

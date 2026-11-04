@@ -36,7 +36,7 @@ const server = new Server(
 
 // ── Tool 1 Schema: Write / Settlement ───────────────────────────────────────
 export const ROHAN_HANDSHAKE_TOOL_SCHEMA = {
-  name: 'rohan_zk_handshake',
+  name: 'rohan_execute_handshake',
   description:
     'Executes a confidential zero-knowledge state transition on Midnight Blockchain. Confidential parameters are automatically canonicalized (RFC 8785) and hashed in client RAM—never exposed on-chain or in model logs.',
   inputSchema: {
@@ -71,7 +71,7 @@ export const ROHAN_HANDSHAKE_TOOL_SCHEMA = {
 export const ROHAN_VERIFY_TOOL_SCHEMA = {
   name: 'rohan_verify_commitment',
   description:
-    'Cryptographically audits and verifies whether a plaintext payload matches an on-chain commitment using RFC 8785 JSON Canonicalization and SHA-256. Zero gas cost, executes instantly in local RAM.',
+    'Verifies a plaintext confidential payload against its SHA-256 digest using RFC 8785 JSON Canonicalization. Supply the inner payload digest, not the outer on-chain intentHash. Zero gas cost; runs in local memory.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -82,7 +82,7 @@ export const ROHAN_VERIFY_TOOL_SCHEMA = {
       expectedDigest: {
         type: 'string',
         pattern: '^(?:sha256:|0x)?[0-9a-fA-F]{64}$',
-        description: 'The 64-character hexadecimal SHA-256 intent commitment (accepts raw hex, 0x, or sha256: prefixes).',
+        description: 'The expected SHA-256 digest of the canonicalized confidential payload (the inner payload digest referenced as digest: sha256:<hash> in actionSummary), not the outer timestamp-salted on-chain intentHash. Accepts raw hex, 0x, or sha256: prefixes.',
       },
     },
     required: ['payload', 'expectedDigest'],
@@ -100,12 +100,28 @@ export const ROHAN_LEDGER_STATE_TOOL_SCHEMA = {
   },
 };
 
+export const ROHAN_HISTORY_TOOL_SCHEMA = {
+  name: 'rohan_get_transaction_history',
+  description:
+    'Lists historical settlement transactions and receipts anchored on Midnight Preprod L1.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      limit: {
+        type: 'integer',
+        description: 'Maximum number of historical transactions to return (default: 10, max: 50).',
+      },
+    },
+  },
+};
+
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       ROHAN_HANDSHAKE_TOOL_SCHEMA,
-      ROHAN_VERIFY_TOOL_SCHEMA,
       ROHAN_LEDGER_STATE_TOOL_SCHEMA,
+      ROHAN_HISTORY_TOOL_SCHEMA,
+      ROHAN_VERIFY_TOOL_SCHEMA,
     ],
   };
 });
@@ -123,7 +139,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const args = rawArgs as Record<string, any>;
 
   // ── Tool 1: rohan_zk_handshake ────────────────────────────────────────────
-  if (toolName === 'rohan_zk_handshake') {
+  if (toolName === 'rohan_execute_handshake' || toolName === 'rohan_zk_handshake') {
     const actionLabel = args.actionSummary || args.intent;
     if (!actionLabel) {
       throw new Error('Invalid arguments: Either actionSummary or intent is required.');
@@ -131,7 +147,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     const isValid = SemanticFirewall.validate({
       agentId: args.agentId,
-      action: 'rohan_zk_handshake',
+      action: 'rohan_execute_handshake',
       payload: args,
     });
 
@@ -207,7 +223,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Single Source of Truth: Canonicalization via @rohan-protocol/sdk
       const canonicalPayload = canonicalizeJson(args.payload);
       const computedDigest = crypto.createHash('sha256').update(canonicalPayload, 'utf8').digest('hex').toLowerCase();
-      const match = computedDigest === normalizedExpected;
+      const match = crypto.timingSafeEqual(
+        Buffer.from(computedDigest, 'hex'),
+        Buffer.from(normalizedExpected, 'hex')
+      );
 
       return {
         content: [{
@@ -257,6 +276,25 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     } catch (err: any) {
       return {
         content: [{ type: 'text', text: JSON.stringify({ success: false, error: err.message || 'Failed to fetch ledger state' }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (toolName === 'rohan_get_transaction_history') {
+    try {
+      const rawLimit = Number(args.limit) || 10;
+      const history = await rohanClient.getTransactionHistory(rawLimit);
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({ status: 'success', ...history }, null, 2),
+        }],
+      };
+    } catch (err: any) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ success: false, error: err.message || 'Failed to fetch transaction history' }) }],
         isError: true,
       };
     }

@@ -30,7 +30,7 @@ export class RohanMcpGateway {
    */
   asAdkTool() {
     return {
-      name: 'rohan_zk_handshake',
+      name: 'rohan_execute_handshake',
       description: 'Executes a zero-knowledge verifiable handshake proof on Midnight Network with zero plaintext leaks.',
       parameters: {
         type: 'object',
@@ -44,6 +44,16 @@ export class RohanMcpGateway {
       execute: async (params: any) => {
         return await this.relayerClient.submitHandshake(params);
       },
+    };
+  }
+
+  /**
+   * Generates the legacy tool name for integrations that have not migrated yet.
+   */
+  asLegacyAdkTool() {
+    return {
+      ...this.asAdkTool(),
+      name: 'rohan_zk_handshake',
     };
   }
 }
