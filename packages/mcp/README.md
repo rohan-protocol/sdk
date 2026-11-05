@@ -2,7 +2,7 @@
 
 Official Model Context Protocol (MCP) server providing confidential state transitions, ledger inspection, and cryptographic audit tools for Claude Desktop, Cursor, Cline, and Gemini.
 
-[![Glama Grade](https://img.shields.io/badge/Glama-Grade%20A%20(5.0)-brightgreen?style=flat-square)](https://glama.ai/mcp/servers/rohan-protocol/shield)
+[![Rohan Shield MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/rohan-protocol/sdk/badges/card.svg)](https://glama.ai/mcp/servers/rohan-protocol/sdk)
 [![Smithery Verified](https://img.shields.io/badge/Smithery-Verified-green?style=flat-square)](https://smithery.ai/servers/rohanprotocol/shield)
 
 ---
