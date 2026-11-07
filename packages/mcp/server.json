@@ -3,7 +3,7 @@
   "name": "io.github.rohan-protocol/mcp",
   "title": "Rohan Protocol MCP",
   "description": "Stateless zero-knowledge trust gateway and WebMCP shield for AI agents on Midnight.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "websiteUrl": "https://rohanprotocol.network",
   "repository": {
     "url": "https://github.com/rohan-protocol/sdk",
@@ -14,11 +14,18 @@
     {
       "registryType": "npm",
       "identifier": "@rohan-protocol/mcp",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
+        {
+          "name": "ROHAN_AGENT_PRIVATE_KEY",
+          "description": "Optional 32-byte Ed25519 seed as 64 hex characters for local stdio request signing. Keep it in a secret store; never provide it as a tool argument.",
+          "default": "",
+          "isRequired": false,
+          "format": "string"
+        },
         {
           "name": "ROHAN_CONTRACT_ADDRESS",
           "description": "Midnight Preprod Contract Address for Rohan Trust Gateway",

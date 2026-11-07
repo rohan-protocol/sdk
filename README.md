@@ -1,4 +1,4 @@
-# Rohan Protocol (v0.7.0)
+# Rohan Protocol (v0.8.0)
 
 [![NPM Version](https://img.shields.io/npm/v/@rohan-protocol/sdk?style=flat-square&color=blue)](https://www.npmjs.com/package/@rohan-protocol/sdk)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)

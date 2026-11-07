@@ -1,8 +1,12 @@
+import type { AgentSigner } from './identity/did.js';
+import type { RequestIdentityV1 } from './identity/envelope.js';
+
 export interface RohanConfig {
   network?: 'preprod' | 'testnet' | 'mainnet';
   contractAddress?: string;
   relayerUrl?: string;
   apiKey?: string;
+  signer?: AgentSigner;
 }
 
 export interface AgentHandshakeIntent {
@@ -22,6 +26,7 @@ export interface HandshakeCommitmentPayload {
   };
   circuitName: string;
   contractAddress: string;
+  identity?: RequestIdentityV1;
 }
 
 export interface HandshakeReceipt {

@@ -1,4 +1,4 @@
-# @rohan-protocol/sdk (v0.7.0)
+# @rohan-protocol/sdk (v0.8.0)
 
 Zero-Docker TypeScript client library for confidential state transitions, cryptographic commitments, and on-chain state inspection on the Midnight Blockchain.
 
@@ -18,6 +18,7 @@ npm install @rohan-protocol/sdk
 * **RFC 8785 Canonicalization (`canonicalizeJson`):** Strict, deterministic JSON Canonicalization Scheme.
 * **On-Chain State Inspection (`getLedgerState`):** 0 Gas, cached state root and block height queries.
 * **Settlement History (`getTransactionHistory`):** 0 Gas, read-only access to the relayer's recent transaction receipts.
+* **Sovereign Agent Identity (`did:key`):** Optional Ed25519 signer support for versioned, canonical handshake requests.
 * **In-Memory Audit Engine (`verifyCommitment`):** Verifies the canonical SHA-256 digest of a confidential payload; use the inner payload digest, not the timestamp-salted on-chain `intentHash`.
 * **Memory Sanitation (`MemorySanitizer`):** Zeroizes sensitive witness buffers after cryptographic operations.
 
@@ -80,6 +81,39 @@ const receipt = await client.submitHandshake({
 console.log('Settlement TxHash:', receipt.txHash);
 console.log('Anchored IntentHash:', receipt.intentHash);
 ```
+
+### 5. Sign Handshakes with an Agent Identity (Optional)
+
+Configure an `AgentSigner` locally. In signed mode, the handshake `agentId`
+must equal the signer's `did:key`; the private key is never sent to the relayer.
+The relayer must support signed v1 requests for the signature to be enforced.
+
+```typescript
+import {
+  generateEd25519KeyPair,
+  InMemoryEd25519Signer,
+  RohanClient,
+} from '@rohan-protocol/sdk';
+
+const keyPair = await generateEd25519KeyPair();
+const signer = new InMemoryEd25519Signer(keyPair.publicKey, keyPair.privateKey);
+const signedClient = new RohanClient({ signer });
+
+const signedReceipt = await signedClient.submitHandshake({
+  agentId: signer.did,
+  intent: 'Signed procurement settlement',
+});
+
+console.log('Agent DID:', signer.did);
+console.log('Settlement TxHash:', signedReceipt.txHash);
+signer.destroy();
+keyPair.privateKey.fill(0);
+```
+
+`InMemoryEd25519Signer.destroy()` wipes its retained raw private-key copy on a
+best-effort basis. JavaScript runtimes and WebCrypto do not guarantee erasure
+of imported key material or other memory copies. Persist and manage identity
+keys with an appropriate secure keystore in production.
 
 ---
 

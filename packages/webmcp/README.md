@@ -1,4 +1,4 @@
-# @rohan-protocol/webmcp (v0.7.0)
+# @rohan-protocol/webmcp (v0.8.0)
 
 Browser-native WebMCP Shield with Zero-Width Unicode Sanitization (V-07) and in-memory cryptographic commitment generation.
 

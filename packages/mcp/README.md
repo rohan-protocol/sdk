@@ -1,4 +1,4 @@
-# @rohan-protocol/mcp (v0.7.0)
+# @rohan-protocol/mcp (v0.8.0)
 
 Official Model Context Protocol (MCP) server providing confidential state transitions, ledger inspection, and cryptographic audit tools for Claude Desktop, Cursor, Cline, and Gemini.
 
@@ -37,7 +37,7 @@ Add this to your `claude_desktop_config.json`:
   "mcpServers": {
     "rohan-shield": {
       "command": "npx",
-      "args": ["-y", "@rohan-protocol/mcp@0.7.0"],
+      "args": ["-y", "@rohan-protocol/mcp@0.8.0"],
       "env": {
         "ROHAN_API_KEY": ""
       }
@@ -51,12 +51,27 @@ Add this to your `claude_desktop_config.json`:
 2. Click **Add New MCP Server**:
    * **Name:** `rohan-shield`
    * **Type:** `command`
-   * **Command:** `npx -y @rohan-protocol/mcp@0.7.0`
+   * **Command:** `npx -y @rohan-protocol/mcp@0.8.0`
 
 ### Option C: Remote MCP (Smithery / Cloud Agents)
 Connect directly to the hosted endpoint:
 * **Server Card:** `https://api.rohanprotocol.network/.well-known/mcp/server-card.json`
 * **JSON-RPC Endpoint:** `https://api.rohanprotocol.network/mcp`
+
+### Optional local agent signing (V-08)
+For a local stdio server, set `ROHAN_AGENT_PRIVATE_KEY` in the MCP process
+environment to a 32-byte Ed25519 seed encoded as exactly 64 hexadecimal
+characters (an optional `0x` prefix is accepted). The SDK derives the matching
+public key and `did:key` from that seed; handshake requests are then signed
+locally. If the variable is unset, the client remains unsigned. If it is set
+but malformed or unusable, startup fails instead of silently falling back to
+unsigned requests.
+
+Keep the seed in the MCP host's secret store or protected process environment.
+Never put it in tool arguments, prompts, source control, or logs. JavaScript
+and WebCrypto do not guarantee erasure of every in-memory key copy. The `did:key`
+proves control of a key, not a real-world identity, and a relayer must enforce
+signature verification for signed mode to provide server-side authentication.
 
 ---
 

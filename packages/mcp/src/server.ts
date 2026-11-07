@@ -11,21 +11,27 @@ import {
 
 import { SemanticFirewall } from './firewall.js';
 import { RohanClient, sealActionIntent, canonicalizeJson } from '@rohan-protocol/sdk';
+import { resolveSignerFromEnv } from './identity.js';
 
 const CONTRACT_ADDRESS = process.env.ROHAN_CONTRACT_ADDRESS || '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e';
 const RELAYER_URL = process.env.ROHAN_RELAYER_URL || 'https://api.rohanprotocol.network/api/v1/handshake';
 const API_KEY = process.env.ROHAN_API_KEY || '';
+const configuredSigner = await resolveSignerFromEnv();
+if (configuredSigner) {
+  console.error(`🛡️ [MCP V-08] Sovereign Agent Signer armed: ${configuredSigner.did}`);
+}
 
 const rohanClient = new RohanClient({
   contractAddress: CONTRACT_ADDRESS,
   relayerUrl: RELAYER_URL,
   apiKey: API_KEY,
+  signer: configuredSigner,
 });
 
 const server = new Server(
   {
     name: 'rohan-protocol-mcp',
-    version: '0.7.0',
+    version: '0.8.0',
   },
   {
     capabilities: {
@@ -306,7 +312,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('🛡️ Rohan Protocol MCP Server running via stdio (v0.7.0)...');
+  console.error('🛡️ Rohan Protocol MCP Server running via stdio (v0.8.0)...');
 }
 
 run().catch((error) => {

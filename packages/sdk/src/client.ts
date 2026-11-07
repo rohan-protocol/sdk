@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { MemorySanitizer } from './security/zeroize.js';
 import { canonicalizeJson } from './index.js';
+import { generateNonce, signEnvelope, type SignedHandshakeV1 } from './identity/envelope.js';
 import type { 
   RohanConfig, 
   AgentHandshakeIntent, 
@@ -69,7 +70,7 @@ function resolveTransactionHistoryUrl(relayerUrl: string, limit: number): string
 }
 
 export class RohanClient {
-  public readonly config: Required<RohanConfig>;
+  public readonly config: Required<Omit<RohanConfig, 'signer'>> & Pick<RohanConfig, 'signer'>;
 
   constructor(config: RohanConfig | string = {}) {
     if (typeof config === 'string') {
@@ -78,6 +79,7 @@ export class RohanClient {
         network: 'preprod',
         relayerUrl: 'https://api.rohanprotocol.network/api/v1/handshake',
         apiKey: '',
+        signer: undefined,
       };
     } else {
       this.config = {
@@ -85,6 +87,7 @@ export class RohanClient {
         network: config.network || 'preprod',
         relayerUrl: normalizeRelayerUrl(config.relayerUrl),
         apiKey: config.apiKey || '',
+        signer: config.signer,
       };
     }
   }
@@ -92,12 +95,17 @@ export class RohanClient {
   async generateHandshakeProof(payload: AgentHandshakeIntent): Promise<HandshakeCommitmentPayload> {
     const timestamp = payload.timestamp || Date.now();
     const encoder = new TextEncoder();
-    
+    const signer = this.config.signer;
+    if (signer && payload.agentId !== signer.did) {
+      throw new Error('SIGNER_MISMATCH: agentId must match the configured signer DID.');
+    }
+    const effectiveAgentId = signer?.did ?? payload.agentId;
+
     const rawWitness = encoder.encode(
-      `${payload.agentId}:${payload.intent}:${JSON.stringify(payload.privateData || {})}:${timestamp}`
+      `${effectiveAgentId}:${payload.intent}:${JSON.stringify(payload.privateData || {})}:${timestamp}`
     );
 
-    return await MemorySanitizer.withSecureWitness(rawWitness, async (witness) => {
+    const commitmentPayload = await MemorySanitizer.withSecureWitness(rawWitness, async (witness) => {
       let intentHashHex: string;
       if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.subtle) {
         const digest = await globalThis.crypto.subtle.digest('SHA-256', witness as unknown as BufferSource);
@@ -111,13 +119,29 @@ export class RohanClient {
       return {
         publicInputs: {
           intentHash: intentHashHex,
-          agentId: payload.agentId,
+          agentId: effectiveAgentId,
           timestamp,
         },
         circuitName: 'verify_batched_handshakes',
-        contractAddress: this.config.contractAddress,
+        contractAddress: this.config.contractAddress.replace(/^0x/i, '').toLowerCase(),
       };
     });
+
+    if (!signer) return commitmentPayload;
+
+    const envelope: SignedHandshakeV1 = {
+      domain: 'rohan-handshake',
+      version: 1,
+      did: signer.did,
+      network: this.config.network,
+      contractAddress: commitmentPayload.contractAddress,
+      circuitName: 'verify_batched_handshakes',
+      timestamp,
+      intentHash: commitmentPayload.publicInputs.intentHash,
+      nonce: generateNonce(),
+    };
+    const identity = await signEnvelope(envelope, signer);
+    return { ...commitmentPayload, identity };
   }
 
   async submitHandshake(payload: AgentHandshakeIntent): Promise<HandshakeReceipt> {
