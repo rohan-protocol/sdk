@@ -21,7 +21,7 @@
       "environmentVariables": [
         {
           "name": "ROHAN_AGENT_PRIVATE_KEY",
-          "description": "Optional 32-byte Ed25519 seed as 64 hex characters for local stdio request signing. Keep it in a secret store; never provide it as a tool argument.",
+          "description": "Optional 32-byte Ed25519 seed as 64 hex characters to override the auto-provisioned local identity. Keep it in a secret store; never provide it as a tool argument.",
           "default": "",
           "isRequired": false,
           "format": "string"
