@@ -129,6 +129,13 @@ export async function verifyHandshakeV1(
 
 Names and synchronous/asynchronous behavior are subject to dependency selection. Prefer WebCrypto where its Ed25519 implementation is supported and consistent with the package runtime matrix. If using `@noble/ed25519`, pin a reviewed version, follow that version's API, and test browser and Node builds. Do not add a silent crypto fallback with different signature semantics.
 
+The SDK is an Enterprise Node.js SDK. Node.js 22 is the current CI-tested
+runtime. Browser support is not part of this iteration: other SDK modules
+import `node:crypto` and use `Buffer`, so WebCrypto support in the signer alone
+does not make the package browser-compatible. Isomorphic browser support is a
+separate R&D goal for RFC-006 / Midnight Grants Milestone 1 and is not part of
+the current support contract.
+
 Key generation should return raw key bytes only if that is required by the caller. Also consider a signer interface backed by a secure keystore/HSM so application code need not export private bytes:
 
 ```ts
@@ -198,6 +205,16 @@ Recommended deployment:
 
 Define behavior for direct SDK callers, stdio MCP, remote MCP handshake calls, the Google ADK gateway, and any streaming proof endpoint. Identity checks must be consistent across all write entry points.
 
+### Migration, monitoring, and rollback procedure
+
+1. Keep `RELAYER_AUTH_MODE=optional` while clients are migrated. Signed requests are verified in this mode; an invalid signed request is rejected and is never treated as unsigned.
+2. Roll out signer configuration to direct SDK clients and local stdio MCP installations. Confirm each client's DID matches its configured signer and verify signed writes on unary, streaming, and remote MCP paths.
+3. Observe `identityMetrics.signedAccepted`, `identityMetrics.unsignedAccepted`, and `identityMetrics.rejected` in `GET /health`. These are process-local counters and reset when the relayer restarts; they are not a durable monitoring store. Export or record them in the operator's monitoring system if trend analysis is required. Never log request bodies, signatures, or confidential payloads.
+4. Before enabling `required`, take the normal SQLite backup, verify all known write clients are signed, and require `unsignedAccepted` to remain zero over an agreed migration window. Confirm the operator can redeploy with `RELAYER_AUTH_MODE=optional`.
+5. To roll back, restore `optional` and restart the relayer. Signed requests remain verified; unsigned writes are accepted again. Treat this as a temporary compatibility rollback, alert on unsigned traffic, and do not delete the nonce table.
+
+The relayer currently accepts timestamps within ±300,000 ms and retains nonce claims for 600,000 ms. It durably rejects a retransmission using the same `(did, nonce)` with HTTP 409, including after a restart. It does not provide receipt recovery or idempotent retries: after an ambiguous timeout, do not blindly create a new nonce and resubmit the same business action, because that is a new authorization and could settle twice. Reconcile the original request's status before retrying.
+
 ## 11. Test plan and acceptance criteria
 
 ### DID tests
@@ -212,13 +229,13 @@ Define behavior for direct SDK callers, stdio MCP, remote MCP handshake calls, t
 - Changing each signed field independently (DID, network, contract, circuit, timestamp, intent hash, nonce, version/domain) causes verification failure.
 - Wrong key, malformed signature, malformed hash, and unsupported versions are rejected.
 - Canonicalization produces identical bytes for equivalent object key orders.
-- Cross-runtime test vectors are stable for Node and supported browser runtimes.
+- Node.js 22 test vectors are stable. Browser vectors and compatibility tests are deferred to RFC-006 / Midnight Grants Milestone 1; browser use is not currently supported.
 
 ### Relayer and integration tests
 
 - Missing signature behavior matches configured mode.
 - Invalid signature, DID mismatch, stale timestamp, or replay is rejected before queueing or chain calls.
-- Duplicate nonce cannot cause two settlements, including concurrent requests and relayer restart.
+- Replaying the same `(did, nonce)` cannot cause two settlements, including concurrent requests and relayer restart. A fresh-nonce retry is a new authorization; there is no receipt recovery/idempotency mechanism, so ambiguous outcomes require reconciliation before retry.
 - Valid requests pass unary and streaming routes and preserve existing response shapes where possible.
 - Existing unsigned clients continue to work in `optional` mode.
 - Invalid signatures do not reserve or burn paid credits.
@@ -228,10 +245,11 @@ Define behavior for direct SDK callers, stdio MCP, remote MCP handshake calls, t
 
 ## 12. Open decisions for review
 
-1. Confirm Ed25519 support in the supported Node/browser matrix; choose WebCrypto or a pinned `@noble/ed25519` version.
-2. Choose signer API: exported raw key pair, callback signer, or both.
-3. Confirm whether `agentId` becomes the `did:key` or remains a separate application identifier signed alongside the DID.
-4. Agree on timestamp tolerance, nonce persistence/retention, retry semantics, and database migration.
-5. Decide how public API-key quota authorization interacts with self-certifying identity and whether identity-to-account binding is required.
-6. Confirm whether responses need a separate relayer signature to address response spoofing; request signatures alone do not authenticate responses.
-7. Confirm whether DIDs/signatures are request-only for this iteration or must later be verified on-chain.
+The current decisions are: Node.js 22 is the supported SDK runtime; WebCrypto Ed25519 has no fallback; `AgentSigner` is the signing abstraction; signed `agentId` is the signer's `did:key`; the relayer accepts ±5-minute timestamps and retains nonce claims for 10 minutes; ambiguous retries require status reconciliation because idempotent receipt recovery is not implemented. Browser support is deferred to RFC-006 / Midnight Grants Milestone 1.
+
+Remaining developer/security decisions:
+
+1. Review and approve the timestamp/retention policy and confirm that the no-blind-retry policy is suitable until idempotent receipt recovery exists.
+2. Decide how public API-key quota authorization interacts with self-certifying identity and whether identity-to-account binding is required.
+3. Decide whether responses need a separate relayer signature to address response spoofing; request signatures alone do not authenticate responses.
+4. Confirm whether DIDs/signatures are request-only for this iteration or must later be verified on-chain.

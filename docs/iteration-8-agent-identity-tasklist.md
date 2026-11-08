@@ -16,13 +16,13 @@
 - [x] **Task 1.2:** Add the RFC 8410 PKCS#8 DER prefix wrapper for WebCrypto Ed25519 private-key import.
 - [x] **Task 1.3:** Add `createDidKey()` and `publicKeyFromDidKey()` with strict 34-byte payload and `0xed01` multicodec validation.
 - [x] **Task 1.4:** Add the `AgentSigner` interface and `InMemoryEd25519Signer` reference implementation.
-- [ ] **Task 1.5:** Verify the public-key/DID pair against an independent W3C CCG / multicodec test vector and retain tampered-message tests. The DID string supplied in the developer proposal does not match the listed public key; the local fixture is computed from the listed key and still requires independent confirmation.
+- [x] **Task 1.5:** Verify the public-key/DID pair against the W3C CCG [`did:key` Ed25519 example](https://github.com/w3c-ccg/did-key-spec#did-key-identifier-syntax): DID `did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK`, raw public key `2e6fcce36701dc791488e0d0b1745cc1e33a4c1c9fcc41c63bd343dbbe0970e6`. The test checks both decoding and encoding; the expected key bytes were independently decoded from the published multibase value. Tampered-message signature coverage remains in `packages/sdk/tests/identity.test.js`.
 - [x] **Task 1.6:** Export the DID module from `packages/sdk/src/index.ts`.
-- [ ] **Task 1.7:** Review memory-lifetime guarantees. `destroy()` wipes the retained raw private-key bytes and blocks future signing, but JavaScript/WebCrypto cannot guarantee erasure of imported `CryptoKey` material or runtime copies.
-- [ ] **Task 1.8:** Confirm Ed25519 WebCrypto support in all supported Node and browser runtimes.
+- [x] **Task 1.7:** Review memory-lifetime guarantees. `destroy()` wipes the signer's retained raw private-key byte array and blocks later signing; it cannot erase an imported WebCrypto `CryptoKey`, caller-owned/runtime copies, or guarantee cryptographic erasure. The SDK README now states these limits and advises dropping references after use.
+- [x] **Task 1.8:** Confirm Ed25519 WebCrypto support in the current supported runtime, Node.js 22. CI tests only Node 22; browser support is explicitly out of scope because other SDK modules depend on `node:crypto` and `Buffer`.
 - [ ] **Task 1.9:** Run SDK build and full tests in CI; review the new implementation before marking Phase 1 ready to merge.
 
-**Local validation:** SDK build succeeds and the full SDK test suite passes locally (15/15). CI and developer/security review are still required before marking this phase “ready to commit”.
+**Local validation:** SDK build succeeds and the full SDK test suite passes locally (24/24) on Node.js 22. CI on the current identity-vector/documentation changes and independent security review are still required before marking this phase “ready to merge”.
 
 ## Phase 2 — Signed Request Envelope (RFC 8785)
 
@@ -68,7 +68,7 @@
 - [x] **Task 4.2:** Enforce a ±300,000 ms timestamp tolerance.
 - [x] **Task 4.3:** Atomically claim `(did, nonce)` before auth/quota reservation and settlement; duplicates receive HTTP 409 (or an MCP tool error).
 - [x] **Task 4.4:** Prune nonce rows older than 600,000 ms, after they can no longer be valid under the timestamp policy.
-- [ ] **Task 4.5:** Test concurrent duplicate requests and relayer restart behavior. In-memory-only replay tracking is insufficient.
+- [x] **Task 4.5:** Test concurrent duplicate requests and relayer restart behavior. The private, gitignored relayer test suite confirms exactly one of eight concurrent requests with the same signed nonce reaches quota reservation; replay is rejected after reopening the database. These tests are in the private relayer workspace, not this public SDK repository.
 
 ## Phase 5 — MCP Integration & E2E Acceptance Gate
 
@@ -77,10 +77,10 @@
 - [x] **Task 5.6:** Document local identity resolution, key backup/deletion/rotation implications, and the fact that the relayer must enforce signatures for server-side authentication.
 
 **Local identity-onboarding validation:** MCP build and tests cover env precedence/fail-closed behavior, persistent reload, exclusive concurrent provisioning, permission restrictions, corrupt/mismatched keystores, symlink rejection, optional `agentId` with signer-DID binding, and mandatory action summaries. Provisioning persists an unencrypted seed in the user's home directory; do not use this default keystore on shared or untrusted hosts without additional secret protection.
-- [ ] **Task 5.3:** Test signed requests through both unary (`/api/v1/handshake`) and streaming (`/api/v1/handshake/stream`) endpoints. Unary was exercised in the Preprod smoke rollout; valid signed streaming E2E remains open.
+- [ ] **Task 5.3:** Test signed requests through both unary (`/api/v1/handshake`) and streaming (`/api/v1/handshake/stream`) endpoints. Local route tests in the private, gitignored relayer workspace cover signed requests on both paths; an authorized live Preprod streaming settlement remains open. Do not execute it without explicit approval and cost confirmation.
 - [x] **Task 5.4:** Run an explicitly approved Midnight Preprod E2E settlement and confirm the mined L1 receipt. Confirm the target network and transaction cost before submitting. Smoke receipt: block 3,324,264; tx `0x00ed130c4574cf3e089bdcadd58dad366e7699ff8cb07234979ab06a0adf49d199`.
-- [ ] **Task 5.5:** Test legacy unsigned clients in `optional` mode and confirm invalid signed requests never downgrade to unsigned.
-- [ ] **Task 5.7:** Document client migration, nonce policy, monitoring, rollback, and the switch to `required`.
+- [x] **Task 5.5:** Test legacy unsigned clients in `optional` mode and confirm invalid signed requests never downgrade to unsigned. Tests in the private, gitignored relayer workspace verify unsigned compatibility in `optional` mode and reject malformed or invalid signed requests.
+- [x] **Task 5.7:** Document client migration, nonce policy, monitoring, rollback, and the switch to `required`. The spec includes `/health` metric limitations, deployment gates, rollback behavior, nonce windows, and safe handling of ambiguous retries.
 
 ## Acceptance gate
 

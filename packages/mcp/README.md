@@ -1,4 +1,4 @@
-# @rohan-protocol/mcp (v0.8.0)
+# @rohan-protocol/mcp (v0.8.1)
 
 Official Model Context Protocol (MCP) server providing confidential state transitions, ledger inspection, and cryptographic audit tools for Claude Desktop, Cursor, Cline, and Gemini.
 
@@ -37,7 +37,7 @@ Add this to your `claude_desktop_config.json`:
   "mcpServers": {
     "rohan-shield": {
       "command": "npx",
-      "args": ["-y", "@rohan-protocol/mcp@0.8.0"],
+      "args": ["-y", "@rohan-protocol/mcp@0.8.1"],
       "env": {
         "ROHAN_API_KEY": ""
       }
@@ -51,7 +51,7 @@ Add this to your `claude_desktop_config.json`:
 2. Click **Add New MCP Server**:
    * **Name:** `rohan-shield`
    * **Type:** `command`
-   * **Command:** `npx -y @rohan-protocol/mcp@0.8.0`
+   * **Command:** `npx -y @rohan-protocol/mcp@0.8.1`
 
 ### Option C: Remote MCP (Smithery / Cloud Agents)
 Connect directly to the hosted endpoint:

@@ -39,7 +39,7 @@ const rohanClient = new RohanClient({
 const server = new Server(
   {
     name: 'rohan-protocol-mcp',
-    version: '0.8.0',
+    version: '0.8.1',
   },
   {
     capabilities: {
@@ -301,7 +301,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function run() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('🛡️ Rohan Protocol MCP Server running via stdio (v0.8.0)...');
+  console.error('🛡️ Rohan Protocol MCP Server running via stdio (v0.8.1)...');
 }
 
 run().catch((error) => {

@@ -13,6 +13,9 @@ import {
 
 const KNOWN_PUBLIC_KEY = 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a';
 const KNOWN_DID = 'did:key:z6MktwupdmLXVVqTzCw4i46r4uGyosGXRnR3XjN4Zq7oMMsw';
+const W3C_EXAMPLE_PUBLIC_KEY =
+  '2e6fcce36701dc791488e0d0b1745cc1e33a4c1c9fcc41c63bd343dbbe0970e6';
+const W3C_EXAMPLE_DID = 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK';
 
 test('creates and resolves an Ed25519 did:key', () => {
   const publicKey = new Uint8Array(Buffer.from(KNOWN_PUBLIC_KEY, 'hex'));
@@ -20,6 +23,13 @@ test('creates and resolves an Ed25519 did:key', () => {
 
   assert.equal(did, KNOWN_DID);
   assert.deepEqual(publicKeyFromDidKey(did), publicKey);
+});
+
+test('matches the W3C CCG did:key Ed25519 example vector', () => {
+  const publicKey = new Uint8Array(Buffer.from(W3C_EXAMPLE_PUBLIC_KEY, 'hex'));
+
+  assert.deepEqual(publicKeyFromDidKey(W3C_EXAMPLE_DID), publicKey);
+  assert.equal(createDidKey(publicKey), W3C_EXAMPLE_DID);
 });
 
 test('Base58btc round-trips bytes and rejects invalid characters', () => {
