@@ -11,7 +11,7 @@ Official Model Context Protocol (MCP) server providing confidential state transi
 
 ### 1. `rohan_execute_handshake` (Write / Settlement)
 Executes a confidential state transition on Midnight Blockchain. Confidential parameters are automatically canonicalized (RFC 8785) and hashed in client RAM—never exposed on-chain or in model logs.
-* **Arguments:** `agentId` (string, required), `actionSummary` (string), `confidentialPayload` (object). The legacy `rohan_zk_handshake` name remains accepted.
+* **Arguments:** `actionSummary` (non-empty string, required), `agentId` (string, optional when a local signer is configured), `confidentialPayload` (object, optional). If supplied with a signer, `agentId` must match its DID. The legacy `rohan_zk_handshake` tool name remains accepted.
 
 ### 2. `rohan_get_ledger_state` (Read / State Inspection)
 Reads the current anchored state of the Rohan Protocol smart contract on Midnight Preprod L1. Returns state root, block height, and last mined transaction hash from memory cache.
@@ -58,20 +58,33 @@ Connect directly to the hosted endpoint:
 * **Server Card:** `https://api.rohanprotocol.network/.well-known/mcp/server-card.json`
 * **JSON-RPC Endpoint:** `https://api.rohanprotocol.network/mcp`
 
-### Optional local agent signing (V-08)
-For a local stdio server, set `ROHAN_AGENT_PRIVATE_KEY` in the MCP process
-environment to a 32-byte Ed25519 seed encoded as exactly 64 hexadecimal
-characters (an optional `0x` prefix is accepted). The SDK derives the matching
-public key and `did:key` from that seed; handshake requests are then signed
-locally. If the variable is unset, the client remains unsigned. If it is set
-but malformed or unusable, startup fails instead of silently falling back to
-unsigned requests.
+### Local agent identity and signing (V-08)
+The local stdio server loads identity in this order:
 
-Keep the seed in the MCP host's secret store or protected process environment.
-Never put it in tool arguments, prompts, source control, or logs. JavaScript
-and WebCrypto do not guarantee erasure of every in-memory key copy. The `did:key`
-proves control of a key, not a real-world identity, and a relayer must enforce
-signature verification for signed mode to provide server-side authentication.
+1. `ROHAN_AGENT_PRIVATE_KEY`, if set, as a 32-byte Ed25519 seed encoded in
+   exactly 64 hexadecimal characters (an optional `0x` prefix is accepted).
+   Invalid configured values fail startup; they never fall back to another key.
+2. The existing `~/.rohan/agent-identity.json` keystore, after checking its
+   permissions and verifying that its DID matches the public key derived from
+   the stored seed.
+3. If no keystore exists, the server provisions one with exclusive,
+   create-only semantics. It is stored as plaintext key material in the
+   user-only file `~/.rohan/agent-identity.json`; the directory is restricted
+   to `0700` and the file to `0600` on POSIX systems. Corrupt or mismatched
+   existing files fail closed and are never silently replaced.
+
+With the local signer active, `agentId` may be omitted and the server supplies
+the signer's DID. If provided, it must exactly match. A non-empty
+`actionSummary` is always required; the `intent` property is deprecated and
+cannot replace it. The DID is reported at startup so operators can record it
+for their agent configuration.
+
+Protect and back up the keystore as a secret. Deleting it provisions a new key
+and therefore a new DID; restoring it preserves the identity. Never put key
+material in tool arguments, prompts, source control, or logs. JavaScript and
+WebCrypto cannot guarantee erasure of all in-memory key copies. A `did:key`
+proves control of a key, not a real-world identity, and the relayer must enforce
+signature verification for server-side authentication.
 
 ---
 

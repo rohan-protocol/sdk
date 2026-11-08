@@ -52,7 +52,7 @@ Rohan Protocol eliminates the classic "dead-end" MCP agent problem by establishi
 ## 📦 Monorepo Packages
 
 * [`@rohan-protocol/sdk`](./packages/sdk): Core TypeScript SDK with cryptographic zeroization, RFC 8785 canonicalization, and state inspection client.
-* [`@rohan-protocol/mcp`](./packages/mcp): Official Model Context Protocol (MCP) server for Claude Desktop, Cursor, Cline, and Gemini.
+* [`@rohan-protocol/mcp`](./packages/mcp): Official Model Context Protocol (MCP) server for Claude Desktop, Cursor, Cline, and Gemini, with local Ed25519 agent identity and optional `agentId` inference from its signer.
 * [`@rohan-protocol/webmcp`](./packages/webmcp): Browser-native WebMCP shield with zero-width character sanitization (V-07).
 
 ---

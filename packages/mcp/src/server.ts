@@ -10,15 +10,23 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { SemanticFirewall } from './firewall.js';
-import { RohanClient, sealActionIntent, canonicalizeJson } from '@rohan-protocol/sdk';
-import { resolveSignerFromEnv } from './identity.js';
+import { RohanClient, sealActionIntent, canonicalizeJson, type AgentSigner } from '@rohan-protocol/sdk';
+import { resolveAgentIdentity } from './identity/keystore.js';
+import {
+  resolveHandshakeAgentId,
+  ROHAN_HANDSHAKE_TOOL_SCHEMA,
+  validateHandshakeArguments,
+} from './identity/handshake.js';
+export { ROHAN_HANDSHAKE_TOOL_SCHEMA };
 
 const CONTRACT_ADDRESS = process.env.ROHAN_CONTRACT_ADDRESS || '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e';
 const RELAYER_URL = process.env.ROHAN_RELAYER_URL || 'https://api.rohanprotocol.network/api/v1/handshake';
 const API_KEY = process.env.ROHAN_API_KEY || '';
-const configuredSigner = await resolveSignerFromEnv();
-if (configuredSigner) {
-  console.error(`🛡️ [MCP V-08] Sovereign Agent Signer armed: ${configuredSigner.did}`);
+const loadedIdentity = await resolveAgentIdentity();
+const configuredSigner: AgentSigner = loadedIdentity.signer;
+console.error(`🛡️ [MCP V-08] Agent identity active (${loadedIdentity.source}): ${loadedIdentity.did}`);
+if (loadedIdentity.filePath) {
+  console.error(`🛡️ [MCP V-08] Keystore path: ${loadedIdentity.filePath}`);
 }
 
 const rohanClient = new RohanClient({
@@ -39,39 +47,6 @@ const server = new Server(
     },
   }
 );
-
-// ── Tool 1 Schema: Write / Settlement ───────────────────────────────────────
-export const ROHAN_HANDSHAKE_TOOL_SCHEMA = {
-  name: 'rohan_execute_handshake',
-  description:
-    'Executes a confidential zero-knowledge state transition on Midnight Blockchain. Confidential parameters are automatically canonicalized (RFC 8785) and hashed in client RAM—never exposed on-chain or in model logs.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      agentId: {
-        type: 'string',
-        description: 'Decentralized Identifier (DID) of the initiating agent',
-      },
-      actionSummary: {
-        type: 'string',
-        description: "Public high-level action label (e.g. 'Vendor Agreement Execution', 'Database Audit Anchor')",
-      },
-      confidentialPayload: {
-        type: 'object',
-        description: 'OPTIONAL confidential parameters (budgets, deals, PII). Automatically canonicalized via RFC 8785 and hashed in local memory.',
-      },
-      counterpartyId: {
-        type: 'string',
-        description: 'Optional counterparty agent identifier',
-      },
-      intent: {
-        type: 'string',
-        description: 'Legacy fallback for actionSummary',
-      },
-    },
-    required: ['agentId'],
-  },
-};
 
 // ── Tool 2 Schema: Audit / In-Memory Verification ───────────────────────────
 export const ROHAN_VERIFY_TOOL_SCHEMA = {
@@ -146,13 +121,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   // ── Tool 1: rohan_zk_handshake ────────────────────────────────────────────
   if (toolName === 'rohan_execute_handshake' || toolName === 'rohan_zk_handshake') {
-    const actionLabel = args.actionSummary || args.intent;
-    if (!actionLabel) {
-      throw new Error('Invalid arguments: Either actionSummary or intent is required.');
+    const argumentsError = validateHandshakeArguments(args);
+    if (argumentsError) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ success: false, error: argumentsError }) }],
+        isError: true,
+      };
     }
 
+    const identity = resolveHandshakeAgentId(args.agentId, configuredSigner);
+    if ('error' in identity) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ success: false, error: identity.error }) }],
+        isError: true,
+      };
+    }
+    const effectiveAgentId = identity.agentId;
+    const actionLabel = args.actionSummary;
+
     const isValid = SemanticFirewall.validate({
-      agentId: args.agentId,
+      agentId: effectiveAgentId,
       action: 'rohan_execute_handshake',
       payload: args,
     });
@@ -168,7 +156,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const finalIntent = sealActionIntent(actionLabel, args.confidentialPayload);
 
       const receipt = await rohanClient.submitHandshake({
-        agentId: args.agentId,
+        agentId: effectiveAgentId,
         intent: finalIntent,
         counterpartyId: args.counterpartyId,
       });
@@ -178,7 +166,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           type: 'text',
           text: JSON.stringify({
             status: 'success',
-            message: 'Zero-Knowledge Handshake successfully settled on Midnight Blockchain.',
+            message: 'Zero-Knowledge Handshake successfully settled on Midnight Blockchain with Sovereign Identity (V-08).',
+            agentDid: effectiveAgentId,
             receipt,
           }, null, 2),
         }],

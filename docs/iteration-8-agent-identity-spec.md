@@ -14,12 +14,12 @@ The signature authenticates the request as having been signed by the key named b
 
 ## 2. Current implementation context
 
-- `RohanClient.generateHandshakeProof()` currently hashes a concatenated string containing `agentId`, `intent`, `privateData`, and `timestamp`; it does not produce an Ed25519 signature.
-- The MCP server seals `confidentialPayload` into an intent digest before calling the SDK. It currently has no signer configuration.
-- The relayer validates an `agentId`, action, and payload with the Semantic Firewall and then submits a state transition. It currently does not authenticate the caller's claimed agent identity.
-- The relayer already has SQLite state and a serialized settlement queue, which can support durable replay/idempotency handling.
+- The SDK creates Ed25519 `did:key` identifiers and can sign versioned canonical handshake envelopes when configured with an `AgentSigner`.
+- The local stdio MCP server can load a seed from `ROHAN_AGENT_PRIVATE_KEY` or a persistent `~/.rohan/agent-identity.json` keystore; if neither exists, it provisions the keystore using create-only semantics.
+- The MCP settlement tool requires a non-empty `actionSummary`; `agentId` may be omitted when a local signer is active, and a supplied value must match the signer DID. The `intent` argument is deprecated and is not accepted as a substitute for `actionSummary`.
+- The relayer has signature verification, time-bounded requests, and durable SQLite nonce claims. Its compatibility mode remains configurable and defaults to `optional`.
 
-Identity and signature validation must be added to the existing public-input envelope and must happen before chain settlement. Do not treat the current Semantic Firewall as a cryptographic identity verifier.
+The Semantic Firewall remains a semantic/input filter, not a cryptographic identity verifier.
 
 ## 3. Goals and non-goals
 
@@ -144,7 +144,11 @@ Extend `RohanConfig` with an optional signer (or an explicitly named identity op
 
 - The MCP tool must not accept private keys as tool arguments.
 - Configure identity through the local MCP process or an injected signer/keystore.
-- When a signer is configured, the MCP server supplies its DID to the SDK and the SDK signs the generated request.
+- The stdio server resolves identity from an explicit seed, then a validated persistent keystore, then create-only first-run provisioning.
+- The tool requires `actionSummary`; `agentId` is optional with a signer and must match its DID when supplied. Without a signer, an explicit `agentId` is required.
+- Existing corrupt keystore data or invalid explicit seed configuration fails closed; it must not silently switch identity or downgrade to unsigned mode.
+- Keystore seed material is plaintext at rest, so the file and parent directory must be protected with owner-only permissions on POSIX systems. Document backup, deletion/rotation, and shared-host risks.
+- When a signer is active, the MCP server supplies its DID to the SDK and signs the generated request.
 - `agentId` in the tool schema should be documented consistently: either it is the caller's DID and must match the configured signer, or it is removed from signed mode and derived from the signer. Do not allow the caller to choose an unrelated DID while the server signs with another key.
 - Return the signed request's DID in the receipt/metadata if useful, but never return the signature unless there is a specific interoperability need.
 

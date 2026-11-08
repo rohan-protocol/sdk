@@ -35,7 +35,7 @@
 - [x] **Task 2.7:** Preserve the existing intent-hash derivation while adding signing.
 - [x] **Task 2.8:** Test field tampering, signer mismatch, malformed signature encodings, unsupported protocol versions, and envelope validation.
 
-**Validation:** SDK build succeeds and all 23 SDK tests pass locally; MCP build succeeds and all 9 MCP tests pass. This does not replace independent crypto review or relayer integration tests.
+**Validation at Phase 2:** SDK build succeeded and all 23 SDK tests passed locally; MCP build and the 9 tests present at that point passed. This does not replace independent crypto review or relayer integration tests.
 
 ## Phase 3 — Relayer Verification Middleware (V-08)
 
@@ -72,12 +72,15 @@
 
 ## Phase 5 — MCP Integration & E2E Acceptance Gate
 
-- [ ] **Task 5.1:** Add MCP support for an injected `AgentSigner` or securely configured signer. Do not make raw private-key environment variables the only or default key-management interface.
-- [ ] **Task 5.2:** Ensure MCP tool schemas never accept private keys as LLM-supplied arguments.
+- [x] **Task 5.1:** Add MCP support for a securely configured signer with environment-seed, validated persistent-keystore, and create-only first-run provisioning paths. The persistent seed is plaintext at rest and requires owner-only filesystem permissions and operator backup/rotation procedures.
+- [x] **Task 5.2:** Ensure MCP tool schemas never accept private keys as LLM-supplied arguments; reject unknown tool properties and require a non-empty `actionSummary`.
+- [x] **Task 5.6:** Document local identity resolution, key backup/deletion/rotation implications, and the fact that the relayer must enforce signatures for server-side authentication.
+
+**Local identity-onboarding validation:** MCP build and tests cover env precedence/fail-closed behavior, persistent reload, exclusive concurrent provisioning, permission restrictions, corrupt/mismatched keystores, symlink rejection, optional `agentId` with signer-DID binding, and mandatory action summaries. Provisioning persists an unencrypted seed in the user's home directory; do not use this default keystore on shared or untrusted hosts without additional secret protection.
 - [ ] **Task 5.3:** Test signed requests through both unary (`/api/v1/handshake`) and streaming (`/api/v1/handshake/stream`) endpoints. Unary was exercised in the Preprod smoke rollout; valid signed streaming E2E remains open.
 - [x] **Task 5.4:** Run an explicitly approved Midnight Preprod E2E settlement and confirm the mined L1 receipt. Confirm the target network and transaction cost before submitting. Smoke receipt: block 3,324,264; tx `0x00ed130c4574cf3e089bdcadd58dad366e7699ff8cb07234979ab06a0adf49d199`.
 - [ ] **Task 5.5:** Test legacy unsigned clients in `optional` mode and confirm invalid signed requests never downgrade to unsigned.
-- [ ] **Task 5.6:** Document client migration, key backup/rotation implications, nonce policy, monitoring, rollback, and the switch to `required`.
+- [ ] **Task 5.7:** Document client migration, nonce policy, monitoring, rollback, and the switch to `required`.
 
 ## Acceptance gate
 
