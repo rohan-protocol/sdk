@@ -3,7 +3,7 @@
   "name": "io.github.rohan-protocol/mcp",
   "title": "Rohan Protocol MCP",
   "description": "Stateless zero-knowledge trust gateway and WebMCP shield for AI agents on Midnight.",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "websiteUrl": "https://rohanprotocol.network",
   "repository": {
     "url": "https://github.com/rohan-protocol/sdk",
@@ -14,7 +14,7 @@
     {
       "registryType": "npm",
       "identifier": "@rohan-protocol/mcp",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "transport": {
         "type": "stdio"
       },

@@ -1,7 +1,7 @@
 {
   "name": "@rohan-protocol/sdk",
-  "version": "0.8.0",
-  "description": "Zero-Knowledge Agent Handshake SDK for Midnight Blockchain",
+  "version": "0.8.1",
+  "description": "Enterprise Node.js SDK for zero-knowledge agent handshakes on Midnight Blockchain",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,4 +1,4 @@
-# @rohan-protocol/sdk (v0.8.0)
+# @rohan-protocol/sdk — Enterprise Node.js SDK (v0.8.1)
 
 Zero-Docker TypeScript client library for confidential state transitions, cryptographic commitments, and on-chain state inspection on the Midnight Blockchain.
 
@@ -21,6 +21,14 @@ npm install @rohan-protocol/sdk
 * **Sovereign Agent Identity (`did:key`):** Optional Ed25519 signer support for versioned, canonical handshake requests.
 * **In-Memory Audit Engine (`verifyCommitment`):** Verifies the canonical SHA-256 digest of a confidential payload; use the inner payload digest, not the timestamp-salted on-chain `intentHash`.
 * **Memory Sanitation (`MemorySanitizer`):** Zeroizes sensitive witness buffers after cryptographic operations.
+
+### Runtime Support
+
+The SDK is an Enterprise Node.js SDK. Node.js 22 is the current supported and
+CI-tested runtime. Browser use is not supported: SDK modules also depend on
+`node:crypto` and `Buffer`, even though the Ed25519 signer uses WebCrypto.
+Isomorphic browser support is a separate R&D goal for RFC-006, Midnight Grants
+Milestone 1; it is not part of this package's current support contract.
 
 ---
 
@@ -110,10 +118,12 @@ signer.destroy();
 keyPair.privateKey.fill(0);
 ```
 
-`InMemoryEd25519Signer.destroy()` wipes its retained raw private-key copy on a
-best-effort basis. JavaScript runtimes and WebCrypto do not guarantee erasure
-of imported key material or other memory copies. Persist and manage identity
-keys with an appropriate secure keystore in production.
+`InMemoryEd25519Signer.destroy()` wipes its retained raw private-key byte array
+and prevents subsequent signing. It is best-effort cleanup, not cryptographic
+erasure: a `CryptoKey` already imported by WebCrypto, runtime copies, and copies
+held by the caller or garbage collector cannot be reliably wiped by JavaScript.
+Drop references to the signer and caller-owned key arrays when finished. Persist
+and manage identity keys with an appropriate secure keystore in production.
 
 ---
 
