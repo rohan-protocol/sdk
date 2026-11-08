@@ -3,7 +3,7 @@
 [![NPM Version](https://img.shields.io/npm/v/@rohan-protocol/sdk?style=flat-square&color=blue)](https://www.npmjs.com/package/@rohan-protocol/sdk)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod%20Verified-purple?style=flat-square)](https://midnight.network)
-[![Smithery Verified](https://img.shields.io/badge/Smithery-Verified-green?style=flat-square)](https://smithery.ai/servers/rohanprotocol/shield)
+
 [![Rohan Shield MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/rohan-protocol/sdk/badges/card.svg)](https://glama.ai/mcp/servers/rohan-protocol/sdk)
 
 > **The Sovereign Privacy & Settlement Layer for Autonomous AI Agents on the Midnight Blockchain.**
