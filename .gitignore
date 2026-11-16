@@ -33,3 +33,4 @@ node_modules/
 *.env
 api_keys.db*
 midnight-level-db
+packages/*/package-lock.json
