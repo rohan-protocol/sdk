@@ -12,7 +12,8 @@
     "ip-address": ">=10.7.4",
     "zod": ">=4.6.7",
     "body-parser": ">=2.4.0",
-    "fast-uri": ">=3.1.9"
+    "fast-uri": ">=3.1.9",
+    "@hono/node-server": ">=2.1.8"
   },
   "workspaces": [
     "packages/sdk",
