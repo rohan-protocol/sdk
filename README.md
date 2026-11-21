@@ -1,8 +1,8 @@
-# Rohan Protocol (v0.8.1)
+# Rohan Protocol (v0.8.2)
 
 [![NPM Version](https://img.shields.io/npm/v/@rohan-protocol/sdk?style=flat-square&color=blue)](https://www.npmjs.com/package/@rohan-protocol/sdk)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
-[![Midnight Network](https://img.shields.io/badge/Midnight-Preprod%20Verified-purple?style=flat-square)](https://midnight.network)
+[![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-purple?style=flat-square)](https://midnight.network)
 [![Rohan Shield MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/rohan-protocol/sdk/badges/score.svg)](https://glama.ai/mcp/servers/rohan-protocol/sdk)
 [![Rohan Protocol MCP on mcprush](https://mcprush.com/badge/rohan-protocol-mcp/score.svg)](https://mcprush.com/to/rohan-protocol-mcp?ref=badge)
 
@@ -38,14 +38,15 @@ Rohan Protocol eliminates the classic "dead-end" MCP agent problem by establishi
 
 ---
 
-## 🛠️ The 4 MCP Lifecycle Tools
+## 🛠️ The 5 MCP Tools
 
 | Tool | Category | Gas Cost | Latency | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `rohan_execute_handshake` | Mutation / Write | Subsidized (Paymaster) | ~30s (L1 Block) | Executes a confidential state transition anchored on Midnight Preprod. The legacy `rohan_zk_handshake` alias is accepted. |
-| `rohan_get_ledger_state` | Inspection / Read | 0 Gas | <1 ms (RAM Cache) | Reads current anchored state root, block height, and tx receipt from the 15s write-through cache. |
-| `rohan_get_transaction_history` | Inspection / Read | 0 Gas | <1 ms (SQLite) | Lists recent recorded settlement transactions and receipts. |
-| `rohan_verify_commitment` | Audit / Verify | 0 Gas | <1 ms (Local RAM) | Checks plaintext against its payload digest via RFC 8785 JCS + SHA-256; supply the inner payload digest, not the outer on-chain `intentHash`. |
+| `rohan_execute_handshake` | Mutation / Write | Relayer-submitted | — | Submits a confidential state transition. The legacy `rohan_zk_handshake` alias is accepted. |
+| `rohan_get_ledger_state` | Inspection / Read | Read-only | — | Reads the contract state root, block height, and last transaction hash. |
+| `rohan_get_transaction_history` | Inspection / Read | Read-only | — | Lists recent settlement transactions and receipts. |
+| `rohan_verify_commitment` | Audit / Verify | Local verification | — | Checks plaintext against the inner payload digest via RFC 8785 JCS + SHA-256, or verifies a `RohanAuditBundle`. |
+| `rohan_get_agent_status` | Identity / Status | Read-only | — | Reports the configured identity and relayer reachability. |
 
 ---
 

@@ -178,6 +178,62 @@ export class InMemoryEd25519Signer implements AgentSigner {
     this.did = createDidKey(this.publicKey);
   }
 
+
+  static async generate(): Promise<InMemoryEd25519Signer> {
+    const { publicKey, privateKey } = await generateEd25519KeyPair();
+    try {
+      return new InMemoryEd25519Signer(publicKey, privateKey);
+    } finally {
+      privateKey.fill(0);
+      publicKey.fill(0);
+    }
+  }
+
+  /**
+   * Node-only helper: derives the matching Ed25519 public key from a 32-byte hex seed.
+   * Uses dynamic import("node:crypto") to keep browser bundlers safe.
+   */
+  static async fromPrivateKeyHex(privateKeyHex: string): Promise<InMemoryEd25519Signer> {
+    if (typeof privateKeyHex !== "string") {
+      throw new TypeError("INVALID_INPUT: Private key hex must be a string.");
+    }
+    const cleanHex = privateKeyHex.trim().replace(/^0x/i, "");
+    if (!/^[0-9a-f]{64}$/i.test(cleanHex)) {
+      throw new Error("INVALID_KEY_FORMAT: Expected a 64-character hexadecimal Ed25519 private key.");
+    }
+
+    let nodeCrypto: typeof import("node:crypto");
+    try {
+      nodeCrypto = await import("node:crypto");
+      if (typeof nodeCrypto.createPrivateKey !== "function" || typeof nodeCrypto.createPublicKey !== "function") {
+        throw new Error("Node crypto key APIs unavailable");
+      }
+    } catch {
+      throw new Error("ENVIRONMENT_ERROR: InMemoryEd25519Signer.fromPrivateKeyHex requires Node.js crypto support.");
+    }
+
+    const privateKey = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      privateKey[i] = parseInt(cleanHex.slice(i * 2, i * 2 + 2), 16);
+    }
+    const pkcs8Bytes = wrapPrivateKeyPkcs8(privateKey);
+
+    try {
+      const privKeyObj = nodeCrypto.createPrivateKey({
+        key: Buffer.from(pkcs8Bytes),
+        format: "der",
+        type: "pkcs8",
+      });
+      const pubKeyObj = nodeCrypto.createPublicKey(privKeyObj);
+      const spkiDer = pubKeyObj.export({ format: "der", type: "spki" });
+      const publicKey = new Uint8Array(spkiDer.subarray(spkiDer.length - 32));
+      return new InMemoryEd25519Signer(publicKey, privateKey);
+    } finally {
+      pkcs8Bytes.fill(0);
+      privateKey.fill(0);
+    }
+  }
+
   private async getSigningKey(): Promise<CryptoKey> {
     if (!this.cryptoKeyPromise) {
       const subtle = globalThis.crypto?.subtle;

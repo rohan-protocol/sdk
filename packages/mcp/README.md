@@ -1,93 +1,68 @@
-# @rohan-protocol/mcp (v0.8.1)
+# @rohan-protocol/mcp (v0.8.2)
 
-Official Model Context Protocol (MCP) server providing confidential state transitions, ledger inspection, and cryptographic audit tools for Claude Desktop, Cursor, Cline, and Gemini.
+Local stdio Model Context Protocol server for handshake submission, ledger and history reads, identity status, and offline verification.
 
-[![Rohan Shield MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/rohan-protocol/sdk/badges/card.svg)](https://glama.ai/mcp/servers/rohan-protocol/sdk)
-[![Smithery Verified](https://img.shields.io/badge/Smithery-Verified-green?style=flat-square)](https://smithery.ai/servers/rohanprotocol/shield)
+## Install and configure
 
----
+Start with Node.js using:
 
-## 🛠️ The 4 MCP Tools
+```bash
+npx -y @rohan-protocol/mcp@0.8.2
+```
 
-### 1. `rohan_execute_handshake` (Write / Settlement)
-Executes a confidential state transition on Midnight Blockchain. Confidential parameters are automatically canonicalized (RFC 8785) and hashed in client RAM—never exposed on-chain or in model logs.
-* **Arguments:** `actionSummary` (non-empty string, required), `agentId` (string, optional when a local signer is configured), `confidentialPayload` (object, optional). If supplied with a signer, `agentId` must match its DID. The legacy `rohan_zk_handshake` tool name remains accepted.
+On first startup, the local server provisions an Ed25519 identity at `~/.rohan/agent-identity.json`. The directory and file use `0700` and `0600` permissions on POSIX systems. `ROHAN_AGENT_PRIVATE_KEY`, when set, overrides the file and must be a 32-byte seed encoded as 64 hexadecimal characters (optional `0x` prefix).
 
-### 2. `rohan_get_ledger_state` (Read / State Inspection)
-Reads the current anchored state of the Rohan Protocol smart contract on Midnight Preprod L1. Returns state root, block height, and last mined transaction hash from memory cache.
-* **Arguments:** None.
-
-### 3. `rohan_get_transaction_history` (Read / Settlement History)
-Lists recent settlement transactions and receipts recorded by the relayer.
-* **Arguments:** `limit` (integer, optional — defaults to 10, maximum 50).
-
-### 4. `rohan_verify_commitment` (Audit / Verify)
-Verifies a plaintext confidential payload against its canonical SHA-256 digest in local memory.
-* **Arguments:** `payload` (object, required), `expectedDigest` (string, required — accepts raw hex, `sha256:`, or `0x` prefixes). Supply the inner payload digest referenced in `actionSummary`, not the timestamp-salted outer on-chain `intentHash`.
-
----
-
-## 🚀 Setup & Configuration
-
-### Option A: Claude Desktop Setup
-Add this to your `claude_desktop_config.json`:
+Example Claude Desktop or Cursor stdio entry:
 
 ```json
 {
   "mcpServers": {
     "rohan-shield": {
       "command": "npx",
-      "args": ["-y", "@rohan-protocol/mcp@0.8.1"],
-      "env": {
-        "ROHAN_API_KEY": ""
-      }
+      "args": ["-y", "@rohan-protocol/mcp@0.8.2"]
     }
   }
 }
 ```
 
-### Option B: Cursor MCP Setup
-1. Go to **Settings → Features → MCP**.
-2. Click **Add New MCP Server**:
-   * **Name:** `rohan-shield`
-   * **Type:** `command`
-   * **Command:** `npx -y @rohan-protocol/mcp@0.8.1`
+Never put private keys in tool arguments, prompts, source control, or logs. A `did:key` proves control of a key, not a real-world identity.
 
-### Option C: Remote MCP (Smithery / Cloud Agents)
-Connect directly to the hosted endpoint:
-* **Server Card:** `https://api.rohanprotocol.network/.well-known/mcp/server-card.json`
-* **JSON-RPC Endpoint:** `https://api.rohanprotocol.network/mcp`
+## MCP tools
 
-### Local agent identity and signing (V-08)
-The local stdio server loads identity in this order:
+The server exposes five tools, each with MCP `annotations`:
 
-1. `ROHAN_AGENT_PRIVATE_KEY`, if set, as a 32-byte Ed25519 seed encoded in
-   exactly 64 hexadecimal characters (an optional `0x` prefix is accepted).
-   Invalid configured values fail startup; they never fall back to another key.
-2. The existing `~/.rohan/agent-identity.json` keystore, after checking its
-   permissions and verifying that its DID matches the public key derived from
-   the stored seed.
-3. If no keystore exists, the server provisions one with exclusive,
-   create-only semantics. It is stored as plaintext key material in the
-   user-only file `~/.rohan/agent-identity.json`; the directory is restricted
-   to `0700` and the file to `0600` on POSIX systems. Corrupt or mismatched
-   existing files fail closed and are never silently replaced.
+| Tool | Purpose | Annotation hints |
+| --- | --- | --- |
+| `rohan_execute_handshake` | Submit a handshake; `actionSummary` is required. With a local signer, `agentId` defaults to its DID and must match if supplied. | `readOnlyHint: false`, `idempotentHint: false` |
+| `rohan_get_ledger_state` | Read current contract state from the relayer. | Read-only, idempotent |
+| `rohan_get_transaction_history` | Read settlement history; optional `limit` (default 10, maximum 50). | Read-only, idempotent |
+| `rohan_verify_commitment` | Verify a plaintext digest and/or a portable audit bundle locally. | Read-only, idempotent, `openWorldHint: false` |
+| `rohan_get_agent_status` | Report local identity metadata and relayer reachability. | Read-only, idempotent |
 
-With the local signer active, `agentId` may be omitted and the server supplies
-the signer's DID. If provided, it must exactly match. A non-empty
-`actionSummary` is always required; the `intent` property is deprecated and
-cannot replace it. The DID is reported at startup so operators can record it
-for their agent configuration.
+The legacy tool name `rohan_zk_handshake` remains accepted by the handler. `rohan_verify_commitment` accepts `auditBundle` with an optional plaintext payload, or `expectedDigest` together with a payload. Verify against the inner `payloadDigest`, not the outer timestamp-salted `intentHash`.
 
-Protect and back up the keystore as a secret. Deleting it provisions a new key
-and therefore a new DID; restoring it preserves the identity. Never put key
-material in tool arguments, prompts, source control, or logs. JavaScript and
-WebCrypto cannot guarantee erasure of all in-memory key copies. A `did:key`
-proves control of a key, not a real-world identity, and the relayer must enforce
-signature verification for server-side authentication.
+## Resource and agent instructions
 
----
+- **Resource:** `rohan://identity` returns identity metadata, signing mode, configured network, contract, and relayer URL. It never includes private key material.
+- **Instructions:** `ROHAN_MCP_INSTRUCTIONS` is sent in the MCP initialization response. It describes the privacy boundary, local identity handling, status checks, audit verification, and recovery guidance for replay, timestamp, signature, and identity errors.
 
-## 📜 License
+## CLI
+
+The same executable provides:
+
+```text
+npx -y @rohan-protocol/mcp@0.8.2 init
+npx -y @rohan-protocol/mcp@0.8.2 status
+npx -y @rohan-protocol/mcp@0.8.2 verify <payload.json> <audit-bundle.json|sha256-digest>
+npx -y @rohan-protocol/mcp@0.8.2 --help
+```
+
+`init` provisions or verifies the identity and prints an MCP configuration snippet. `status` checks the existing identity without creating a keystore and queries relayer state. `verify` performs offline audit-bundle or digest verification.
+
+## Remote MCP
+
+The separately hosted remote MCP endpoint is `https://api.rohanprotocol.network/mcp`; this package's zero-config command starts the local stdio server.
+
+## License
 
 Apache-2.0

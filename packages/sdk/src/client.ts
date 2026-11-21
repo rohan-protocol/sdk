@@ -1,13 +1,19 @@
 import crypto from 'node:crypto';
 import { MemorySanitizer } from './security/zeroize.js';
-import { canonicalizeJson } from './index.js';
+import { canonicalizeJson } from './security/jcs.js';
 import { generateNonce, signEnvelope, type SignedHandshakeV1 } from './identity/envelope.js';
-import type { 
-  RohanConfig, 
-  AgentHandshakeIntent, 
-  HandshakeCommitmentPayload, 
+import {
+  buildAuditBundle,
+  computePayloadDigest,
+  extractSealedIntentParts,
+  sealActionIntentAsync,
+} from './identity/bundle.js';
+import type {
+  RohanConfig,
+  AgentHandshakeIntent,
+  HandshakeCommitmentPayload,
   HandshakeReceipt,
-  TransactionHistoryResponse
+  TransactionHistoryResponse,
 } from './types.js';
 
 export interface LedgerState {
@@ -34,9 +40,6 @@ export interface VerificationResult {
   verifiedAt: number;
 }
 
-/**
- * Normalizes relayer URL to ensure valid API endpoint routing.
- */
 function normalizeRelayerUrl(url?: string): string {
   if (!url) return 'https://api.rohanprotocol.network/api/v1/handshake';
   let clean = url.trim();
@@ -49,9 +52,6 @@ function normalizeRelayerUrl(url?: string): string {
   return `${clean}/api/v1/handshake`;
 }
 
-/**
- * Resolves the ledger state read endpoint from the configured relayer URL.
- */
 function resolveLedgerStateUrl(relayerUrl: string): string {
   let base = relayerUrl.trim();
   while (base.endsWith('/')) {
@@ -92,17 +92,61 @@ export class RohanClient {
     }
   }
 
-  async generateHandshakeProof(payload: AgentHandshakeIntent): Promise<HandshakeCommitmentPayload> {
+  private async prepareProofContext(payload: AgentHandshakeIntent): Promise<{
+    commitment: HandshakeCommitmentPayload;
+    actionSummary?: string;
+    payloadDigest?: string;
+  }> {
+    if (payload.confidentialPayload !== undefined && payload.privateData !== undefined) {
+      throw new Error('INVALID_PAYLOAD: Provide either confidentialPayload or legacy privateData, not both.');
+    }
+
     const timestamp = payload.timestamp || Date.now();
     const encoder = new TextEncoder();
     const signer = this.config.signer;
-    if (signer && payload.agentId !== signer.did) {
+
+    if (signer && payload.agentId && payload.agentId !== signer.did) {
       throw new Error('SIGNER_MISMATCH: agentId must match the configured signer DID.');
     }
+
     const effectiveAgentId = signer?.did ?? payload.agentId;
+    if (!effectiveAgentId) {
+      throw new Error('MISSING_AGENT_ID: agentId is required when no signer is configured.');
+    }
+
+    let effectiveIntent = payload.intent;
+    let witnessPrivatePart: Record<string, unknown> = {};
+    let actionSummary: string | undefined;
+    let payloadDigest: string | undefined;
+
+    if (payload.confidentialPayload !== undefined) {
+      // Prevent double-sealing an already sealed intent string
+      const preSealed = extractSealedIntentParts(payload.intent);
+      if (preSealed.payloadDigest) {
+        throw new Error('INVALID_PAYLOAD: intent is already sealed with a digest; do not pass confidentialPayload simultaneously.');
+      }
+      const sealed = await sealActionIntentAsync(payload.intent, payload.confidentialPayload);
+      effectiveIntent = sealed.sealedIntent;
+      actionSummary = payload.intent;
+      payloadDigest = sealed.payloadDigest;
+      witnessPrivatePart = {};
+    } else if (payload.privateData !== undefined) {
+      // Legacy privateData path: preserve exact JSON.stringify witness derivation
+      witnessPrivatePart = payload.privateData;
+      if (Object.keys(payload.privateData).length > 0) {
+        payloadDigest = await computePayloadDigest(payload.privateData);
+      }
+      actionSummary = undefined; // Explicitly unbound legacy mode
+    } else {
+      // Pre-sealed via sealActionIntent() or pure public actionSummary
+      const parts = extractSealedIntentParts(payload.intent);
+      actionSummary = parts.actionSummary;
+      payloadDigest = parts.payloadDigest;
+      witnessPrivatePart = {};
+    }
 
     const rawWitness = encoder.encode(
-      `${effectiveAgentId}:${payload.intent}:${JSON.stringify(payload.privateData || {})}:${timestamp}`
+      `${effectiveAgentId}:${effectiveIntent}:${JSON.stringify(witnessPrivatePart)}:${timestamp}`
     );
 
     const commitmentPayload = await MemorySanitizer.withSecureWitness(rawWitness, async (witness) => {
@@ -127,7 +171,9 @@ export class RohanClient {
       };
     });
 
-    if (!signer) return commitmentPayload;
+    if (!signer) {
+      return { commitment: commitmentPayload, actionSummary, payloadDigest };
+    }
 
     const envelope: SignedHandshakeV1 = {
       domain: 'rohan-handshake',
@@ -141,11 +187,20 @@ export class RohanClient {
       nonce: generateNonce(),
     };
     const identity = await signEnvelope(envelope, signer);
-    return { ...commitmentPayload, identity };
+    return {
+      commitment: { ...commitmentPayload, identity },
+      actionSummary,
+      payloadDigest,
+    };
+  }
+
+  async generateHandshakeProof(payload: AgentHandshakeIntent): Promise<HandshakeCommitmentPayload> {
+    const { commitment } = await this.prepareProofContext(payload);
+    return commitment;
   }
 
   async submitHandshake(payload: AgentHandshakeIntent): Promise<HandshakeReceipt> {
-    const commitment = await this.generateHandshakeProof(payload);
+    const { commitment, actionSummary, payloadDigest } = await this.prepareProofContext(payload);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -163,13 +218,23 @@ export class RohanClient {
       throw new Error(err.error || `Relayer submission failed with HTTP ${response.status}`);
     }
 
-    return await response.json();
+    const rawReceipt = (await response.json()) as HandshakeReceipt;
+    const enrichedReceipt: HandshakeReceipt = {
+      ...rawReceipt,
+      ...(payloadDigest ? { payloadDigest } : {}),
+    };
+
+    enrichedReceipt.auditBundle = buildAuditBundle({
+      commitment,
+      receipt: enrichedReceipt,
+      network: this.config.network,
+      actionSummary,
+      payloadDigest,
+    });
+
+    return enrichedReceipt;
   }
 
-  /**
-   * [TASK 2.2 / BLOCK 2] - Reads current on-chain ledger state from Relayer memory cache.
-   * Zero gas cost, <1 ms latency.
-   */
   async getLedgerState(): Promise<LedgerState> {
     const url = resolveLedgerStateUrl(this.config.relayerUrl);
     const headers: Record<string, string> = {
@@ -213,18 +278,13 @@ export class RohanClient {
     return await response.json();
   }
 
-  /**
-   * [TASK 2.1 / BLOCK 2] - Pure in-memory cryptographic verification of intent commitment.
-   * RFC 8785 JCS canonicalization + SHA-256. Zero gas cost.
-   */
   async verifyCommitment(
-    payload: Record<string, unknown>, 
+    payload: Record<string, unknown>,
     expectedDigest: string
   ): Promise<VerificationResult> {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
       throw new Error('Invalid argument: payload must be a non-null object.');
     }
-    // Payload-Size-Guard (Max 256 KB im RAM)
     const payloadString = JSON.stringify(payload);
     if (payloadString.length > 256 * 1024) {
       throw new Error('PAYLOAD_TOO_LARGE: Plaintext exceeds maximum allowed size of 256 KB.');
@@ -233,7 +293,6 @@ export class RohanClient {
       throw new Error('Invalid argument: expectedDigest must be a string.');
     }
 
-    // Tolerant prefix handling: removes sha256: or 0x
     const cleanExpected = expectedDigest.replace(/^(?:sha256:|0x)/i, '').toLowerCase();
     if (!/^[0-9a-f]{64}$/.test(cleanExpected)) {
       throw new Error('Invalid expectedDigest: must be a 64-character hexadecimal SHA-256 hash.');
@@ -291,8 +350,8 @@ export class RohanRelayerClient extends RohanClient {
   }
 
   async submitProofStream(proofData: HandshakeCommitmentPayload, onProgress?: (event: any) => void): Promise<HandshakeReceipt> {
-    const streamUrl = this.config.relayerUrl.endsWith('/stream') 
-      ? this.config.relayerUrl 
+    const streamUrl = this.config.relayerUrl.endsWith('/stream')
+      ? this.config.relayerUrl
       : `${this.config.relayerUrl.replace(/\/handshake$/, '')}/handshake/stream`;
 
     const headers: Record<string, string> = {
