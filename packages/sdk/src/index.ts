@@ -7,3 +7,5 @@ export * from './security/canonicalize.js';
 export { canonicalizeJson, sealActionIntent } from './security/canonicalize.js';
 export * from './identity/did.js';
 export * from './identity/envelope.js';
+
+export * from './identity/bundle.js';

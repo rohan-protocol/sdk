@@ -1,6 +1,6 @@
 import type { AgentSigner } from './did.js';
 import { publicKeyFromDidKey, verifyEd25519Signature } from './did.js';
-import { canonicalizeJson } from '../security/canonicalize.js';
+import { canonicalizeJson } from '../security/jcs.js';
 
 const ENVELOPE_KEYS = [
   'domain',

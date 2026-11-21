@@ -1,132 +1,66 @@
-# @rohan-protocol/sdk — Enterprise Node.js SDK (v0.8.1)
+# @rohan-protocol/sdk — Enterprise Node.js SDK (v0.8.2)
 
-Zero-Docker TypeScript client library for confidential state transitions, cryptographic commitments, and on-chain state inspection on the Midnight Blockchain.
+TypeScript client for handshake commitments, optional Ed25519 request signing, ledger-state reads, and audit-bundle verification.
 
----
-
-## 📦 Installation
+## Installation
 
 ```bash
 npm install @rohan-protocol/sdk
 ```
 
----
+## Runtime support and package entry points
 
-## 🌟 Key Features
+The root `@rohan-protocol/sdk` entry point is an Enterprise Node.js SDK, currently CI-tested with Node.js 22. Its package manifest has no external runtime dependencies.
 
-* **Zero-Docker Client Stack:** In-memory cryptographic witness synthesis and SHA-256 Intent Commitments without container virtualization.
-* **RFC 8785 Canonicalization (`canonicalizeJson`):** Strict, deterministic JSON Canonicalization Scheme.
-* **On-Chain State Inspection (`getLedgerState`):** 0 Gas, cached state root and block height queries.
-* **Settlement History (`getTransactionHistory`):** 0 Gas, read-only access to the relayer's recent transaction receipts.
-* **Sovereign Agent Identity (`did:key`):** Optional Ed25519 signer support for versioned, canonical handshake requests.
-* **In-Memory Audit Engine (`verifyCommitment`):** Verifies the canonical SHA-256 digest of a confidential payload; use the inner payload digest, not the timestamp-salted on-chain `intentHash`.
-* **Memory Sanitation (`MemorySanitizer`):** Zeroizes sensitive witness buffers after cryptographic operations.
+The `@rohan-protocol/sdk/identity` subpath exposes identity, envelope, audit-bundle, and canonicalization APIs without statically importing Node built-ins; it can be used in browser environments with WebCrypto. `InMemoryEd25519Signer.fromPrivateKeyHex()` is Node-only. The root SDK client is not a browser-supported entry point.
 
-### Runtime Support
-
-The SDK is an Enterprise Node.js SDK. Node.js 22 is the current supported and
-CI-tested runtime. Browser use is not supported: SDK modules also depend on
-`node:crypto` and `Buffer`, even though the Ed25519 signer uses WebCrypto.
-Isomorphic browser support is a separate R&D goal for RFC-006, Midnight Grants
-Milestone 1; it is not part of this package's current support contract.
-
----
-
-## 💻 API Reference & Code Examples
-
-### 1. Initialize Client
+## Create an identity and sign a handshake
 
 ```typescript
-import { RohanClient } from '@rohan-protocol/sdk';
+import { InMemoryEd25519Signer, RohanClient } from '@rohan-protocol/sdk';
 
-const client = new RohanClient({
-  contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
-  relayerUrl: 'https://api.rohanprotocol.network/api/v1/handshake',
-  apiKey: 'rohan_live_...' // Optional: Leave empty for free sandbox
-});
-```
+const signer = await InMemoryEd25519Signer.generate();
+const client = new RohanClient({ signer });
 
-### 2. Inspect Anchored Ledger State (Read / Inspect)
-
-```typescript
-const state = await client.getLedgerState();
-const history = await client.getTransactionHistory(10);
-console.log(state);
-console.log(history);
-// {
-//   success: true,
-//   contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
-//   currentStateRoot: '1eaf4a0cd4e7dea3a969885c65193240ee5d68039dba0c162765a6c9b82eb6d7',
-//   blockHeight: 3192001,
-//   lastTxHash: 'da2d26611dc37d6c6914d317762d46a5944ad42c3100129630e9e6fad638000a',
-//   cacheAgeMs: 154,
-//   cacheTtlMs: 15000,
-//   isMinedOnChain: true
-// }
-```
-
-### 3. Verify a Confidential Commitment (Audit / Verify)
-
-```typescript
-const audit = await client.verifyCommitment(
-  { deal: 'Acquisition', valuationUsd: 5000000 },
-  'sha256:7f465a3d7e5d8ecae5e3b9aaec54b9cb76136be9f2a0df8b2c4cfa0980dfd322'
-);
-
-if (audit.valid) {
-  console.log('✅ Payload matches its canonical SHA-256 digest!');
-}
-```
-
-### 4. Execute a Handshake (Write / Settle)
-
-```typescript
 const receipt = await client.submitHandshake({
-  agentId: 'did:midnight:agent-104',
-  intent: 'Procurement Settlement',
-  privateData: { vendorIban: 'DE89370400440532013000', amountEur: 12500 }
+  agentId: signer.did,
+  intent: 'Procurement authorization',
+  confidentialPayload: { vendor: 'Acme', budget: 5000 },
 });
-console.log('Settlement TxHash:', receipt.txHash);
-console.log('Anchored IntentHash:', receipt.intentHash);
+
+console.log(receipt.txHash, receipt.intentHash);
+console.log(receipt.auditBundle);
+signer.destroy();
 ```
 
-### 5. Sign Handshakes with an Agent Identity (Optional)
+For a Node.js process that receives a 32-byte Ed25519 seed as 64 hex characters:
 
-Configure an `AgentSigner` locally. In signed mode, the handshake `agentId`
-must equal the signer's `did:key`; the private key is never sent to the relayer.
-The relayer must support signed v1 requests for the signature to be enforced.
+```typescript
+const signer = await InMemoryEd25519Signer.fromPrivateKeyHex(process.env.AGENT_PRIVATE_KEY!);
+```
+
+Do not pass private-key material in prompts, tool arguments, or source control. `destroy()` clears the signer's retained raw byte array and prevents further signing; JavaScript and WebCrypto cannot guarantee erasure of every runtime copy.
+
+## Audit bundles and identity subpath
+
+`RohanAuditBundle` is the portable receipt type returned as `receipt.auditBundle`. `verifyAuditBundle()` validates the bundle schema and verifies any included Ed25519 identity proof, intent binding, and optional plaintext payload digest.
 
 ```typescript
 import {
-  generateEd25519KeyPair,
-  InMemoryEd25519Signer,
-  RohanClient,
-} from '@rohan-protocol/sdk';
+  verifyAuditBundle,
+  type RohanAuditBundle,
+} from '@rohan-protocol/sdk/identity';
 
-const keyPair = await generateEd25519KeyPair();
-const signer = new InMemoryEd25519Signer(keyPair.publicKey, keyPair.privateKey);
-const signedClient = new RohanClient({ signer });
-
-const signedReceipt = await signedClient.submitHandshake({
-  agentId: signer.did,
-  intent: 'Signed procurement settlement',
-});
-
-console.log('Agent DID:', signer.did);
-console.log('Settlement TxHash:', signedReceipt.txHash);
-signer.destroy();
-keyPair.privateKey.fill(0);
+const result = await verifyAuditBundle(bundle as RohanAuditBundle, plaintextPayload);
+if (!result.valid) throw new Error(result.errors.join('; '));
 ```
 
-`InMemoryEd25519Signer.destroy()` wipes its retained raw private-key byte array
-and prevents subsequent signing. It is best-effort cleanup, not cryptographic
-erasure: a `CryptoKey` already imported by WebCrypto, runtime copies, and copies
-held by the caller or garbage collector cannot be reliably wiped by JavaScript.
-Drop references to the signer and caller-owned key arrays when finished. Persist
-and manage identity keys with an appropriate secure keystore in production.
+When checking only a payload digest, `computePayloadDigest()` returns an RFC 8785 JCS SHA-256 digest. Use the inner `payloadDigest`, not the timestamp-salted outer `intentHash`.
 
----
+## Other client operations
 
-## 📜 License
+`RohanClient` also provides `getLedgerState()`, `getTransactionHistory(limit?)`, and `verifyCommitment(payload, expectedDigest)`. The state and history methods make HTTP reads against the configured relayer; `verifyCommitment()` performs local digest verification.
+
+## License
 
 Apache-2.0

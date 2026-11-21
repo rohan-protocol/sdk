@@ -1,5 +1,6 @@
 import type { AgentSigner } from './identity/did.js';
 import type { RequestIdentityV1 } from './identity/envelope.js';
+import type { RohanAuditBundle } from './identity/bundle.js';
 
 export interface RohanConfig {
   network?: 'preprod' | 'testnet' | 'mainnet';
@@ -10,11 +11,12 @@ export interface RohanConfig {
 }
 
 export interface AgentHandshakeIntent {
-  agentId: string;
+  agentId?: string;
   intent: string;
   counterpartyId?: string;
   timestamp?: number;
   privateData?: Record<string, unknown>;
+  confidentialPayload?: Record<string, unknown>;
 }
 
 export interface HandshakeCommitmentPayload {
@@ -35,9 +37,12 @@ export interface HandshakeReceipt {
   contractAddress: string;
   intentHash: string;
   txHash: string;
+  blockHeight?: number | null;
   gasPaidBy?: string;
   engine?: string;
   timestamp: number;
+  payloadDigest?: string;
+  auditBundle?: RohanAuditBundle;
 }
 
 export interface TransactionRecord {
