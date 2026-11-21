@@ -170,3 +170,15 @@ test('extracts actionSummary and payloadDigest automatically from sealActionInte
     signer.destroy();
   }
 });
+
+test('extractSealedIntentParts runs in linear O(n) time on adversarial whitespace input (ReDoS guard)', async () => {
+  const { extractSealedIntentParts } = await import('../dist/identity/index.js');
+  const malicious = 'Vendor Deal' + ' '.repeat(100_000) + '(digest: sha256:not-a-valid-hash)';
+  const t0 = performance.now();
+  const parsed = extractSealedIntentParts(malicious);
+  const elapsedMs = performance.now() - t0;
+
+  assert.equal(parsed.payloadDigest, undefined);
+  assert.equal(parsed.actionSummary, malicious);
+  assert.ok(elapsedMs < 100, `Expected linear runtime <100ms, got ${elapsedMs}ms`);
+});

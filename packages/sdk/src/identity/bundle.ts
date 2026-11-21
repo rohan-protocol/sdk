@@ -114,13 +114,25 @@ export function extractSealedIntentParts(intentString: string): {
   if (typeof intentString !== 'string') {
     return { actionSummary: '' };
   }
-  const match = intentString.match(/^(.*)\s+\(digest:\s*sha256:([0-9a-fA-F]{64})\)\s*$/);
-  if (!match) {
+
+  const trimmed = intentString.trimEnd();
+  const markerIdx = trimmed.lastIndexOf('(digest:');
+  if (markerIdx <= 0 || !trimmed.endsWith(')')) {
     return { actionSummary: intentString };
   }
+
+  if (!/^\s$/.test(trimmed[markerIdx - 1])) {
+    return { actionSummary: intentString };
+  }
+
+  const afterPrefix = trimmed.slice(markerIdx + '(digest:'.length, -1).trimStart();
+  if (afterPrefix.length !== 71 || !/^sha256:[0-9a-fA-F]{64}$/.test(afterPrefix)) {
+    return { actionSummary: intentString };
+  }
+
   return {
-    actionSummary: match[1],
-    payloadDigest: `sha256:${match[2].toLowerCase()}`,
+    actionSummary: trimmed.slice(0, markerIdx - 1),
+    payloadDigest: `sha256:${afterPrefix.slice('sha256:'.length).toLowerCase()}`,
   };
 }
 
