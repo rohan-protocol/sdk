@@ -1,7 +1,16 @@
 {
   "name": "@rohan-protocol/sdk",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Enterprise Node.js SDK for zero-knowledge agent handshakes on Midnight Blockchain",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohan-protocol/sdk.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://rohanprotocol.network",
+  "bugs": {
+    "url": "https://github.com/rohan-protocol/sdk/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

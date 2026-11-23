@@ -84,7 +84,7 @@ async function handleInit(io: CliIo): Promise<number> {
 
       const mcpEntry: Record<string, unknown> = {
         command: 'npx',
-        args: ['-y', `@rohan-protocol/mcp@${ROHAN_MCP_VERSION}`],
+        args: ['-y', '--package', `@rohan-protocol/mcp@${ROHAN_MCP_VERSION}`, 'rohan-shield'],
       };
 
       if (network !== 'preprod' || relayerUrl !== 'https://api.rohanprotocol.network/api/v1/handshake') {

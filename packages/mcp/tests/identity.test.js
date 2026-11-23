@@ -147,6 +147,11 @@ test('requires actionSummary and resolves optional agentId to the signer DID', a
       validateHandshakeArguments({ actionSummary: 'review', intent: {} }),
       /Deprecated intent must be a string/
     );
+    assert.equal(validateHandshakeArguments({ actionSummary: 'review', dryRun: true }), undefined);
+    assert.match(
+      validateHandshakeArguments({ actionSummary: 'review', dryRun: 'true' }),
+      /dryRun must be a boolean/
+    );
     assert.deepEqual(resolveHandshakeAgentId(undefined, signer), { agentId: signer.did });
     assert.deepEqual(resolveHandshakeAgentId(signer.did, signer), { agentId: signer.did });
     assert.match(resolveHandshakeAgentId('did:key:other', signer).error, /^IDENTITY_MISMATCH:/);

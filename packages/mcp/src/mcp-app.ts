@@ -9,6 +9,8 @@ import {
 import {
   RohanClient,
   sealActionIntent,
+  computePayloadDigest,
+  extractSealedIntentParts,
   canonicalizeJson,
   verifyAuditBundle,
   type AgentSigner,
@@ -24,7 +26,7 @@ import {
 } from './identity/handshake.js';
 import type { LoadedAgentIdentity } from './identity/keystore.js';
 
-export const ROHAN_MCP_VERSION = '0.8.2';
+export const ROHAN_MCP_VERSION = '0.8.3';
 
 export const ROHAN_MCP_INSTRUCTIONS = `
 Rohan Protocol provides gas-free confidential commitments and Ed25519 (W3C did:key) non-repudiation on Midnight Network (Ledger v9).
@@ -34,7 +36,8 @@ CORE RULES FOR AGENTS:
 2. PRIVATE KEYS: Never ask the user for private keys or pass private keys in tool arguments. Local stdio identity is managed automatically (~/.rohan/agent-identity.json or ROHAN_AGENT_PRIVATE_KEY). Do not invent an \`agentId\` when a local signer is active.
 3. IDENTITY & STATUS: To check your active \`did:key\`, network, or relayer health, read \`rohan://identity\` or call \`rohan_get_agent_status\`.
 4. AUDIT VERIFICATION: \`rohan_verify_commitment\` checks plaintext against the **inner \`payloadDigest\`** (RFC 8785 JCS + SHA-256, referenced in \`actionSummary\` or \`auditBundle.payloadDigest\`), NOT the outer timestamp-salted \`intentHash\`. You can also pass an entire \`auditBundle\` to verify signature and binding offline.
-5. ERROR RECOVERY:
+5. DRY RUN: Use \`dryRun: true\` only when the user explicitly asks to preview, test, or inspect a commitment without settling on-chain. The default is \`false\`; dry runs create no transaction and no \`txHash\`.
+6. ERROR RECOVERY:
    - \`REPLAY_DETECTED\` (409): Do NOT retry the same payload/nonce. Call \`rohan_get_transaction_history\` to inspect existing settlements.
    - \`STALE_TIMESTAMP\` (401): Retry with a fresh tool invocation.
    - \`INVALID_SIGNATURE\` (401): Call \`rohan_get_agent_status\` to verify the active identity and relayer status before retrying.
@@ -57,7 +60,7 @@ export const ROHAN_EXECUTE_TOOL_WITH_ANNOTATIONS = {
 export const ROHAN_VERIFY_TOOL_SCHEMA = {
   name: 'rohan_verify_commitment',
   description:
-    'Cryptographically audits a plaintext payload and/or a portable RohanAuditBundle offline in local memory (0 gas). Provide either expectedDigest with payload, or auditBundle (with optional payload for plaintext verification). Never pass the outer timestamp-salted intentHash as expectedDigest.',
+    'Cryptographically audits a plaintext payload and/or a portable RohanAuditBundle offline in local memory (0 gas). Usage guidelines:\n- Use to verify a payload digest or audit bundle; do not use to submit a handshake (use rohan_execute_handshake).\n- For expectedDigest mode provide the exact original JSON payload and the inner payloadDigest; never pass the outer timestamp-salted intentHash. For auditBundle mode, provide the complete bundle and optionally the original payload.\n- Verification is local and does not send plaintext to the relayer. Treat valid: false as a cryptographic mismatch, not a tool execution error; use recoveryAction to correct inputs.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -89,7 +92,7 @@ export const ROHAN_VERIFY_TOOL_SCHEMA = {
 export const ROHAN_LEDGER_STATE_TOOL_SCHEMA = {
   name: 'rohan_get_ledger_state',
   description:
-    'Reads the current anchored state of the Rohan Protocol smart contract on Midnight Preprod L1. Returns the state root, block height, and last mined transaction hash from memory cache.',
+    'Reads the current anchored Rohan Protocol contract state on Midnight. Usage guidelines:\n- Use for the latest state root, block height, or last transaction hash; do not use for transaction lists (use rohan_get_transaction_history) or identity/relayer health (use rohan_get_agent_status).\n- This is a read-only network lookup; do not include confidential payloads. If unavailable, check rohan_get_agent_status before retrying.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -106,7 +109,7 @@ export const ROHAN_LEDGER_STATE_TOOL_SCHEMA = {
 export const ROHAN_HISTORY_TOOL_SCHEMA = {
   name: 'rohan_get_transaction_history',
   description:
-    'Lists historical settlement transactions and receipts anchored on Midnight Preprod L1.',
+    'Lists historical Rohan Protocol settlement transactions and receipts on Midnight. Usage guidelines:\n- Use to find or inspect prior settlements, especially after REPLAY_DETECTED; do not use for the latest state root (use rohan_get_ledger_state) or identity/health (use rohan_get_agent_status).\n- This read-only lookup accepts no confidential payload. If it fails, check rohan_get_agent_status and follow the returned error guidance.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -128,7 +131,7 @@ export const ROHAN_HISTORY_TOOL_SCHEMA = {
 export const ROHAN_AGENT_STATUS_TOOL_SCHEMA = {
   name: 'rohan_get_agent_status',
   description:
-    'Returns the local Sovereign Agent identity (W3C did:key), signing mode, configured network, and live relayer reachability/block height (gracefully degrades if relayer is offline). Never exposes private keys.',
+    'Returns the active Sovereign Agent identity (W3C did:key), signing mode, configured network, and relayer reachability (gracefully degrades if offline). Usage guidelines:\n- Use to inspect local identity or diagnose connectivity and signature errors; do not use for transaction details (use rohan_get_transaction_history) or full ledger state (use rohan_get_ledger_state).\n- Never exposes private keys. Do not send secrets as arguments; if offline, inspect configuration and retry only after recovery.',
   inputSchema: {
     type: 'object',
     properties: {},
@@ -272,7 +275,7 @@ export function createRohanMcpServer(options: CreateRohanMcpServerOptions): Serv
 
   const server = new Server(
     {
-      name: 'rohan-protocol-mcp',
+      name: 'rohan-shield',
       version: ROHAN_MCP_VERSION,
     },
     {
@@ -386,6 +389,29 @@ export function createRohanMcpServer(options: CreateRohanMcpServerOptions): Serv
 
       try {
         const finalIntent = sealActionIntent(actionLabel, args.confidentialPayload);
+
+        if (args.dryRun === true) {
+          const commitment = await rohanClient.generateHandshakeProof({
+            agentId: effectiveAgentId,
+            intent: finalIntent,
+            counterpartyId: args.counterpartyId,
+          });
+          const sealedParts = extractSealedIntentParts(finalIntent);
+          const payloadDigest =
+            args.confidentialPayload && Object.keys(args.confidentialPayload).length > 0
+              ? await computePayloadDigest(args.confidentialPayload)
+              : sealedParts.payloadDigest;
+
+          return buildSuccessResult({
+            status: 'dry_run_only',
+            settledOnChain: false,
+            agentDid: effectiveAgentId,
+            actionSummary: actionLabel,
+            ...(payloadDigest ? { payloadDigest } : {}),
+            intentHash: commitment.publicInputs.intentHash,
+            commitment,
+          });
+        }
 
         const receipt = await rohanClient.submitHandshake({
           agentId: effectiveAgentId,
@@ -501,10 +527,14 @@ export function createRohanMcpServer(options: CreateRohanMcpServerOptions): Serv
             args.auditBundle as RohanAuditBundle,
             args.payload as Record<string, unknown> | undefined
           );
+          const recoveryAction = result.valid
+            ? undefined
+            : 'Provide the exact original JSON payload used for the handshake and the complete unmodified auditBundle. Check payloadDigest (the inner SHA-256 digest); intentHash is an outer timestamp-salted commitment, not a payload digest. Review the reported schema, signature, and intent-binding errors before trusting the bundle.';
           return buildSuccessResult({
             status: 'success',
             mode: 'audit-bundle',
             ...result,
+            ...(recoveryAction ? { recoveryAction } : {}),
           });
         } catch (err: any) {
           return buildErrorResult(
@@ -561,6 +591,12 @@ export function createRohanMcpServer(options: CreateRohanMcpServerOptions): Serv
           computedDigest,
           algorithm: 'SHA-256 (RFC 8785 JCS)',
           verifiedAt: Date.now(),
+          ...(match
+            ? {}
+            : {
+                recoveryAction:
+                  'Use the exact original JSON payload supplied to rohan_execute_handshake and compare its computedDigest with the inner payloadDigest. Do not pass the outer timestamp-salted intentHash as expectedDigest.',
+              }),
         });
       } catch (err: any) {
         return buildErrorResult(

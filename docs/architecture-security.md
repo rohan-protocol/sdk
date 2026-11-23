@@ -1,4 +1,4 @@
-### Architecture & Security Model (No-BS Technical Spec)
+# Architecture & Security Model (v0.8.3)
 
 Rohan Protocol separates **confidential business execution** (local RAM) from **immutable state anchoring** (Midnight Network L1) and **gas payment** (Stripe-backed Paymaster Relayer).
 
@@ -8,8 +8,8 @@ Rohan Protocol separates **confidential business execution** (local RAM) from **
 
 1. **Canonicalization (RFC 8785 JCS):** `confidentialPayload` is deterministically serialized (`canonicalizeJson()` with depth guard `<= 32`) so key order never changes hashes.
 2. **Double-Layer Commitment:**
-   * **Inner `payloadDigest`:** `SHA-256(canonicalJson(confidentialPayload))` — used for auditing plaintext against the commitment.
-   * **Outer `intentHash`:** `SHA-256(agentId : finalIntentText : timestamp)` — 32-byte commitment anchored on-chain.
+   * **Inner `payloadDigest`:** `SHA-256(UTF-8(JCS(confidentialPayload)))`, with RFC 8785 JCS — used for auditing plaintext against the commitment.
+   * **Outer `intentHash`:** `SHA-256(UTF-8(agentId:sealedActionSummary:{}:timestamp))` — 32-byte commitment anchored on-chain. It binds the locally sealed action and timestamp; it is not the payload digest.
    * `MemorySanitizer.withSecureWitness()` overwrites temporary witness byte buffers (`fill(0)`) immediately after hashing.
 3. **V-08 Sovereign Signing:** The client builds a fixed 9-field `SignedHandshakeV1` envelope (`domain`, `version`, `did`, `network`, `contractAddress`, `circuitName`, `timestamp`, `intentHash`, `nonce`), canonicalizes it via RFC 8785, and signs the UTF-8 bytes with Ed25519 (`did:key`).
 
@@ -50,5 +50,9 @@ On Midnight Preprod L1 (Ledger v9, Protocol `2001100`), the Relayer invokes `ver
    ```
 
 Invalid signatures (401) or identity mismatches (403) abort before rohanAuthGate — attackers can never drain a customer's paid quota with forged signatures.
+
+### 5. Runtime configuration and hosted boundary
+
+The local MCP accepts `ROHAN_RELAYER_URL` (for self-hosting), `ROHAN_NETWORK`, `ROHAN_CONTRACT_ADDRESS`, `ROHAN_AGENT_PRIVATE_KEY`, and `ROHAN_API_KEY`. In **Local Stdio MCP**, hashes and signatures are computed in local process memory. **Remote HTTP MCP** (`https://api.rohanprotocol.network/mcp`) is a separately hosted sandbox and has a different trust boundary.
 
 ---

@@ -1,8 +1,17 @@
 {
   "name": "@rohan-protocol/mcp",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "mcpName": "io.github.rohan-protocol/mcp",
   "description": "Model Context Protocol (MCP) Gateway for Rohan Protocol ZK-Handshakes",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohan-protocol/sdk.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://rohanprotocol.network",
+  "bugs": {
+    "url": "https://github.com/rohan-protocol/sdk/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -23,7 +32,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "@rohan-protocol/sdk": "^0.8.2"
+    "@rohan-protocol/sdk": "^0.8.3"
   },
   "files": [
     "dist",
@@ -35,6 +44,6 @@
   },
   "bin": {
     "rohan-shield": "./dist/server.js",
-    "mcp": "./dist/server.js"
+    "rohan-mcp": "./dist/server.js"
   }
 }
