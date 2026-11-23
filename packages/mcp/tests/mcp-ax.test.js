@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import {
+  computePayloadDigest,
   InMemoryEd25519Signer,
   RohanClient,
 } from '@rohan-protocol/sdk';
@@ -123,6 +124,7 @@ test('MCP stdio exposes instructions, resources capability, all 5 annotated tool
 
   // 1. Initialize response carries instructions and resources capability
   const initRes = responses.find((r) => r.id === 1).result;
+  assert.equal(initRes.serverInfo.name, 'rohan-shield');
   assert.ok(initRes.capabilities.resources);
   assert.ok(initRes.instructions.includes('CORE RULES FOR AGENTS'));
   assert.ok(initRes.instructions.includes('on Midnight Network (Ledger v9)'));
@@ -132,6 +134,13 @@ test('MCP stdio exposes instructions, resources capability, all 5 annotated tool
   // 2. All 5 tools listed with annotations & no top-level anyOf/oneOf in verify schema
   const tools = responses.find((r) => r.id === 2).result.tools;
   assert.equal(tools.length, 5);
+  for (const tool of tools) {
+    assert.ok(tool.description.includes('Usage guidelines:'), `${tool.name} needs usage guidelines`);
+    assert.ok(tool.annotations);
+    for (const hint of ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint']) {
+      assert.equal(typeof tool.annotations[hint], 'boolean', `${tool.name} needs boolean ${hint}`);
+    }
+  }
   assert.deepEqual(
     tools.map((tool) => tool.name),
     [
@@ -174,6 +183,59 @@ test('MCP stdio exposes instructions, resources capability, all 5 annotated tool
   assert.equal(verifyErr.structuredContent.code, 'INVALID_ARGUMENTS');
   assert.ok(verifyErr.structuredContent.recoveryAction);
   assert.ok(verifyErr.content[0].text);
+});
+
+test('dryRun previews a signed commitment without any network request or transaction hash', async (t) => {
+  const signer = await InMemoryEd25519Signer.generate();
+  t.after(() => signer.destroy());
+  const deal = { orderId: 'PO-DRY-1', amount: 125 };
+  const originalFetch = globalThis.fetch;
+  let fetchCalls = 0;
+  globalThis.fetch = async () => {
+    fetchCalls++;
+    throw new Error('dryRun must not call fetch');
+  };
+
+  const client = new RohanClient({ network: 'preprod', signer });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const mcpServer = createRohanMcpServer({
+    contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
+    relayerUrl: 'https://api.rohanprotocol.network/api/v1/handshake',
+    rohanClient: client,
+    configuredSigner: signer,
+  });
+  const mcpClient = new Client({ name: 'dry-run-test-client', version: '1.0.0' }, { capabilities: {} });
+
+  try {
+    await Promise.all([
+      mcpServer.connect(serverTransport),
+      mcpClient.connect(clientTransport),
+    ]);
+
+    const result = await mcpClient.callTool({
+      name: 'rohan_execute_handshake',
+      arguments: {
+        actionSummary: 'Preview procurement authorization',
+        confidentialPayload: deal,
+        dryRun: true,
+      },
+    });
+    const preview = result.structuredContent;
+    assert.notEqual(result.isError, true);
+    assert.equal(preview.status, 'dry_run_only');
+    assert.equal(preview.settledOnChain, false);
+    assert.equal(preview.agentDid, signer.did);
+    assert.equal(preview.payloadDigest, await computePayloadDigest(deal));
+    assert.equal(preview.intentHash, preview.commitment.publicInputs.intentHash);
+    assert.ok(preview.commitment.identity.signature);
+    assert.equal('txHash' in preview, false);
+    assert.equal(JSON.stringify(preview).includes('txHash'), false);
+    assert.equal(fetchCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await mcpClient.close().catch(() => {});
+    await mcpServer.close().catch(() => {});
+  }
 });
 
 test('agent status default timeout allows a cold-cache lookup longer than 3.5 seconds', async (t) => {
@@ -309,6 +371,19 @@ test('MCP InMemoryTransport Client <-> Server: deduplicated auditBundle, offline
     });
     assert.equal(verifyBad.structuredContent.valid, false);
     assert.equal(verifyBad.structuredContent.payloadMatch, false);
+    assert.notEqual(verifyBad.isError, true);
+    assert.ok(verifyBad.structuredContent.recoveryAction);
+
+    const digestMismatch = await mcpClient.callTool({
+      name: 'rohan_verify_commitment',
+      arguments: {
+        expectedDigest: '0'.repeat(64),
+        payload: deal,
+      },
+    });
+    assert.equal(digestMismatch.structuredContent.valid, false);
+    assert.notEqual(digestMismatch.isError, true);
+    assert.match(digestMismatch.structuredContent.recoveryAction, /payloadDigest/);
 
     // 4. Replay error classification -> REPLAY_DETECTED
     const replayRes = await mcpClient.callTool({

@@ -1,4 +1,4 @@
-# @rohan-protocol/sdk — Enterprise Node.js SDK (v0.8.2)
+# @rohan-protocol/sdk — Enterprise Node.js SDK (v0.8.3)
 
 TypeScript client for handshake commitments, optional Ed25519 request signing, ledger-state reads, and audit-bundle verification.
 
@@ -56,6 +56,14 @@ if (!result.valid) throw new Error(result.errors.join('; '));
 ```
 
 When checking only a payload digest, `computePayloadDigest()` returns an RFC 8785 JCS SHA-256 digest. Use the inner `payloadDigest`, not the timestamp-salted outer `intentHash`.
+
+## What is hashed locally
+
+The client computes `payloadDigest = SHA-256(UTF-8(JCS(confidentialPayload)))`, where JCS is RFC 8785 canonical JSON. It seals that digest into the public action summary. The outer `intentHash` is computed in local memory as SHA-256 over the UTF-8 witness `agentId:sealedActionSummary:{}:timestamp`; the two hashes serve different purposes. `confidentialPayload` is not submitted to the relayer.
+
+The SDK can be configured through `RohanClient` options (`network`, `contractAddress`, `relayerUrl`, `apiKey`, and `signer`). The local MCP additionally reads `ROHAN_RELAYER_URL` (including self-hosted relayers), `ROHAN_NETWORK`, `ROHAN_CONTRACT_ADDRESS`, `ROHAN_AGENT_PRIVATE_KEY`, and `ROHAN_API_KEY`.
+
+Local SDK hashing and signing occur in the caller's process. This differs from the hosted Remote HTTP MCP at `https://api.rohanprotocol.network/mcp`, which runs in a hosted sandbox.
 
 ## Other client operations
 

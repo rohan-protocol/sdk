@@ -74,6 +74,11 @@ async function runStdioServer() {
   });
 
   const transport = new StdioServerTransport();
+  if (process.stdin.isTTY === true) {
+    console.error(
+      'ℹ️ Interactive terminal detected: running MCP stdio JSON-RPC server (waiting on stdin). For CLI setup or diagnostics, run: npx @rohan-protocol/mcp status'
+    );
+  }
   await server.connect(transport);
   console.error(`🛡️ Rohan Protocol MCP Server running via stdio (v${ROHAN_MCP_VERSION}, network=${NETWORK})...`);
 }

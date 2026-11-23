@@ -1,7 +1,16 @@
 {
   "name": "@rohan-protocol/webmcp",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Browser-Native Zero-Knowledge Shield for WebMCP and AI Web Agents",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rohan-protocol/sdk.git",
+    "directory": "packages/webmcp"
+  },
+  "homepage": "https://rohanprotocol.network",
+  "bugs": {
+    "url": "https://github.com/rohan-protocol/sdk/issues"
+  },
   "type": "module",
   "keywords": [
     "webmcp",
@@ -36,7 +45,7 @@
     "react-dom": ">=18.0.0"
   },
   "dependencies": {
-    "@rohan-protocol/sdk": "^0.8.2"
+    "@rohan-protocol/sdk": "^0.8.3"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",

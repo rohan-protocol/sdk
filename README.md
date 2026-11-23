@@ -1,4 +1,4 @@
-# Rohan Protocol (v0.8.2)
+# Rohan Protocol (v0.8.3)
 
 [![NPM Version](https://img.shields.io/npm/v/@rohan-protocol/sdk?style=flat-square&color=blue)](https://www.npmjs.com/package/@rohan-protocol/sdk)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
@@ -55,6 +55,22 @@ Rohan Protocol eliminates the classic "dead-end" MCP agent problem by establishi
 * [`@rohan-protocol/sdk`](./packages/sdk): Enterprise Node.js SDK (Node 22 CI-tested) with cryptographic zeroization, RFC 8785 canonicalization, and state inspection. Browser support is not included; isomorphic support is separate R&D for RFC-006 / Midnight Grants Milestone 1.
 * [`@rohan-protocol/mcp`](./packages/mcp): Official Model Context Protocol (MCP) server for Claude Desktop, Cursor, Cline, and Gemini, with local Ed25519 agent identity and optional `agentId` inference from its signer.
 * [`@rohan-protocol/webmcp`](./packages/webmcp): Browser-native WebMCP shield with zero-width character sanitization (V-07).
+
+## Local commitments and remote transports
+
+With the **Local Stdio MCP** or SDK, the client computes `payloadDigest = SHA-256(UTF-8(JCS(confidentialPayload)))` locally, where JCS is RFC 8785 canonical JSON. The sealed action summary contains this inner digest. The outer `intentHash` is locally computed as SHA-256 over the UTF-8 commitment witness `agentId:sealedActionSummary:{}:timestamp`; it is not the payload digest. The plaintext confidential payload is not sent to the relayer. `dryRun: true` previews the signed commitment locally without submitting or producing a `txHash`.
+
+The separate **Remote HTTP MCP** at `https://api.rohanprotocol.network/mcp` runs in a hosted sandbox; do not treat it as equivalent to local processing. Use Local Stdio when the local RAM boundary is required.
+
+The local MCP accepts `ROHAN_RELAYER_URL` (self-hosted relayer URL), `ROHAN_NETWORK` (`preprod`, `testnet`, or `mainnet`), `ROHAN_CONTRACT_ADDRESS`, `ROHAN_AGENT_PRIVATE_KEY` (64 hex-character seed; use a secret store), and `ROHAN_API_KEY`. Defaults are supplied for the relayer, network, and contract; an auto-provisioned local identity is used unless the private-key variable is set.
+
+To independently check a returned `txHash`, query the Midnight Preprod Indexer v4 GraphQL endpoint directly (remove a leading `0x` from the hash); this does not rely on Rohan's relayer:
+
+```bash
+curl -sS -X POST 'https://midnight-preprod.blockfrost.io/api/v0?project_id=<YOUR_BLOCKFROST_TOKEN>' \
+  -H 'content-type: application/json' \
+  --data '{"query":"{ transactions(offset: { hash: \"<TX_HASH_WITHOUT_0x>\" }) { hash protocolVersion block { height hash } } }"}'
+```
 
 ---
 

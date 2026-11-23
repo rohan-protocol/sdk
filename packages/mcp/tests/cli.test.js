@@ -59,6 +59,7 @@ test('CLI init provisions keystore safely, prints Claude config, and never leaks
   assert.equal(res.code, 0);
   assert.match(res.stdout, /did:key:z6Mk/);
   assert.match(res.stdout, /"rohan-shield"/);
+  assert.match(res.stdout, /--package/);
 
   const keystorePath = path.join(temp.dir, '.rohan', 'agent-identity.json');
   assert.equal(fs.existsSync(keystorePath), true);

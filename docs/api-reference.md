@@ -1,4 +1,8 @@
-### API & MCP Tool Reference
+# API & MCP Tool Reference (v0.8.3)
+
+**Local Stdio MCP** runs in the local process: canonicalization, hashing, and Ed25519 signing occur in client memory. **Remote HTTP MCP** (`https://api.rohanprotocol.network/mcp`) runs in a hosted sandbox and is a separate trust boundary.
+
+For a confidential object, the local client computes `payloadDigest = SHA-256(UTF-8(JCS(confidentialPayload)))`, where JCS is RFC 8785 canonical JSON. The outer `intentHash` is SHA-256 over the UTF-8 commitment witness `agentId:sealedActionSummary:{}:timestamp`; it is not the payload digest.
 
 * **Base URL:** `https://api.rohanprotocol.network`
 * **Network:** `midnight-preprod` (Ledger v9, Protocol `2001100`)
@@ -10,6 +14,7 @@
 
 ### Tool 1: `rohan_execute_handshake`
 Executes a confidential commitment settlement on Midnight Preprod L1 (`readOnlyHint: false`, `0` gas to caller).
+For a user-requested local preview, set optional `dryRun: true`. It runs firewall and identity checks, computes the signed commitment locally, and returns `settledOnChain: false`, `payloadDigest` when applicable, and `intentHash` without a network call or `txHash`. The default is `false`; do not use dry run for an authorized settlement.
 
 **Example Input:**
 
@@ -20,6 +25,8 @@ Executes a confidential commitment settlement on Midnight Preprod L1 (`readOnlyH
   "counterpartyId": "did:key:z6MkpTHR8VNsBxYAAWHut2Geadd9jSwuBV8xRoAnwWsdvktH"
 }
 ```
+
+**Dry-run input:** Add `"dryRun": true` only when the user asks to preview, test, or inspect a commitment without settling. The returned `commitment` includes the locally generated `publicInputs` and Ed25519 identity proof when a signer is configured. No relayer submission occurs.
 
 **Example Output:**
 
@@ -107,7 +114,7 @@ Locally verifies plaintext against the inner payloadDigest using RFC 8785 JCS + 
 }
 ```
 
-### Tool 5: `rohan_get_agent_status` [Local Stdio MCP / v0.8.2+]
+### Tool 5: `rohan_get_agent_status` [Local Stdio MCP / v0.8.3]
 
 Returns real runtime identity and connectivity telemetry (readOnlyHint: true, 0 gas). (Also exposed as MCP Resource rohan://identity.)
 
@@ -149,3 +156,23 @@ Returns real runtime identity and connectivity telemetry (readOnlyHint: true, 0 
 | 403 | `IDENTITY_MISMATCH` | `publicInputs.agentId` does not match `identity.did` |
 | 409 | `REPLAY_DETECTED` | (`did`, `nonce`) already consumed in durable SQLite store — do not reuse nonces; check `GET /api/v1/transactions` |
 | 503 | Service Unavailable | Relayer booting / syncing Midnight DUST projections |
+
+### Environment variables (Local Stdio MCP)
+
+| Variable | Purpose |
+| --- | --- |
+| `ROHAN_RELAYER_URL` | Handshake endpoint; configure this for a self-hosted relayer. |
+| `ROHAN_NETWORK` | `preprod`, `testnet`, or `mainnet`. |
+| `ROHAN_CONTRACT_ADDRESS` | Contract address used for commitments and reads. |
+| `ROHAN_AGENT_PRIVATE_KEY` | Optional 64-hex-character Ed25519 seed; use a secret store and never pass it to tools. |
+| `ROHAN_API_KEY` | Optional relayer API key. |
+
+### Independently verify a `txHash`
+
+Query the Midnight Preprod Indexer v4 GraphQL API directly, without relying on Rohan's relayer. Strip a leading `0x` from the transaction hash:
+
+```bash
+curl -sS -X POST 'https://midnight-preprod.blockfrost.io/api/v0?project_id=<YOUR_BLOCKFROST_TOKEN>' \
+  -H 'content-type: application/json' \
+  --data '{"query":"{ transactions(offset: { hash: \"<TX_HASH_WITHOUT_0x>\" }) { hash protocolVersion block { height hash } } }"}'
+```

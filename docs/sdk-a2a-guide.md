@@ -1,4 +1,6 @@
 
+# SDK A2A Guide (v0.8.3)
+
 When Agent A (Company A) authorizes a purchase, API trigger, or SLA with Agent B (Company B), disputes happen: *"Our agent never authorized that price or payload."*
 
 With `@rohan-protocol/sdk`, Agent A signs a canonical request envelope (`Ed25519` / `did:key`), anchors a commitment on Midnight L1, and hands Agent B a self-contained proof to verify offline.
@@ -24,7 +26,7 @@ import {
 const keyPair = await generateEd25519KeyPair();
 const signer = new InMemoryEd25519Signer(keyPair.publicKey, keyPair.privateKey);
 
-// Option 2 (v0.8.2): One-liner helper (or fromPrivateKeyHex in Node.js)
+// Option 2 (v0.8.3): One-liner helper (or fromPrivateKeyHex in Node.js)
 // const signer = await InMemoryEd25519Signer.generate();
 
 const client = new RohanClient({
@@ -53,6 +55,10 @@ console.log('L1 TxHash:     ', receipt.txHash);
 console.log('IntentHash:    ', receipt.intentHash);
 console.log('PayloadDigest: ', receipt.payloadDigest);
 ```
+
+The SDK computes `payloadDigest = SHA-256(UTF-8(JCS(confidentialPayload)))` locally, with RFC 8785 JCS. The sealed action summary incorporates this inner digest. The outer `intentHash` is locally computed as SHA-256 of the UTF-8 witness `agentId:sealedActionSummary:{}:timestamp`, not the same digest. The plaintext payload stays in the client process.
+
+Local SDK/MCP mode computes and signs in local process memory. The hosted Remote HTTP MCP endpoint at `https://api.rohanprotocol.network/mcp` runs in a sandbox and has a separate trust boundary.
 
 > **Enterprise KMS / HSM support:** Never force raw keys into production code. Implement `AgentSigner` (`{ readonly did: string; sign(message: Uint8Array): Promise<Uint8Array> }`) backed by AWS KMS, GCP KMS, or HashiCorp Vault.
 
@@ -98,7 +104,7 @@ if (!audit.valid) {
   throw new Error(`Dispute check failed: ${audit.reason}`);
 }
 
-// B) Manual digest verification (works in v0.8.0+ via verifyCommitment / canonicalizeJson)
+// B) Manual digest verification (available since v0.8.0 via verifyCommitment / canonicalizeJson)
 const expectedHex = auditBundle.payloadDigest.replace(/^sha256:/, '');
 const computedHex = crypto.createHash('sha256').update(canonicalizeJson(dealPayload)).digest('hex');
 if (computedHex !== expectedHex) {
@@ -118,7 +124,7 @@ console.log('Verified & Mined on Midnight L1:', isMined);
 Or directly in the terminal:
 
 ```bash
-npx @rohan-protocol/mcp verify deal.json audit-bundle.json
+npx -y --package @rohan-protocol/mcp@0.8.3 rohan-shield verify deal.json audit-bundle.json
 ```
 
 ---
