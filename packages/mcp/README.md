@@ -75,7 +75,7 @@ For confidential data, local hashing uses `payloadDigest = SHA-256(UTF-8(JCS(con
 | --- | --- |
 | `ROHAN_RELAYER_URL` | Relayer handshake URL; set this to self-host. |
 | `ROHAN_NETWORK` | `preprod`, `testnet`, or `mainnet` (default: `preprod`). |
-| `ROHAN_CONTRACT_ADDRESS` | Target Midnight contract (default: configured Preprod contract). |
+| `ROHAN_CONTRACT_ADDRESS` | Target Midnight contract (default: `585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e`). |
 | `ROHAN_AGENT_PRIVATE_KEY` | Optional 64-hex-character Ed25519 seed; overrides the local keystore. Keep in a secret store. |
 | `ROHAN_API_KEY` | Optional relayer API key. |
 
@@ -86,6 +86,12 @@ curl -sS -X POST 'https://midnight-preprod.blockfrost.io/api/v0?project_id=<YOUR
   -H 'content-type: application/json' \
   --data '{"query":"{ transactions(offset: { hash: \"<TX_HASH_WITHOUT_0x>\" }) { hash protocolVersion block { height hash } } }"}'
 ```
+
+## Source, docs & registries
+
+- **Source:** [GitHub repository](https://github.com/rohan-protocol/sdk)
+- **Docs:** [Quickstart](https://github.com/rohan-protocol/sdk/blob/main/docs/quickstart.md), [Architecture & Security](https://github.com/rohan-protocol/sdk/blob/main/docs/architecture-security.md), [API reference](https://github.com/rohan-protocol/sdk/blob/main/docs/api-reference.md)
+- **Registries:** [Official MCP Registry](https://registry.modelcontextprotocol.io/) (`io.github.rohan-protocol/mcp`), [Glama](https://glama.ai/mcp/servers/rohan-protocol/sdk), [MCP Rush](https://mcprush.com/to/rohan-protocol-mcp?ref=badge)
 
 ## License
 
