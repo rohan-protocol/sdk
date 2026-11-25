@@ -42,35 +42,29 @@ Rohan Protocol eliminates the classic "dead-end" MCP agent problem by establishi
 
 | Tool | Category | Gas Cost | Latency | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `rohan_execute_handshake` | Mutation / Write | Relayer-submitted | — | Submits a confidential state transition. The legacy `rohan_zk_handshake` alias is accepted. |
-| `rohan_get_ledger_state` | Inspection / Read | Read-only | — | Reads the contract state root, block height, and last transaction hash. |
-| `rohan_get_transaction_history` | Inspection / Read | Read-only | — | Lists recent settlement transactions and receipts. |
-| `rohan_verify_commitment` | Audit / Verify | Local verification | — | Checks plaintext against the inner payload digest via RFC 8785 JCS + SHA-256, or verifies a `RohanAuditBundle`. |
-| `rohan_get_agent_status` | Identity / Status | Read-only | — | Reports the configured identity and relayer reachability. |
+| `rohan_execute_handshake` | Mutation / Write | Relayer-submitted | ~25s L1 (or <1ms `dryRun`) | Submits a confidential state transition (supports `dryRun: true` and legacy `rohan_zk_handshake` alias). |
+| `rohan_get_ledger_state` | Inspection / Read | Read-only (0 Gas) | <5 ms (15s Cache) | Reads the contract state root, block height, and last transaction hash. |
+| `rohan_get_transaction_history` | Inspection / Read | Read-only (0 Gas) | <5 ms | Lists recent settlement transactions and receipts. |
+| `rohan_verify_commitment` | Audit / Verify | Local RAM (0 Gas) | <1 ms | Checks plaintext against the inner `payloadDigest` via RFC 8785 JCS + SHA-256, or verifies a `RohanAuditBundle`. |
+| `rohan_get_agent_status` | Identity / Status | Read-only (0 Gas) | Local / Relayer ping | Reports the configured `did:key` identity, network, and relayer reachability. |
 
 ---
 
 ## 📦 Monorepo Packages
 
-* [`@rohan-protocol/sdk`](./packages/sdk): Enterprise Node.js SDK (Node 22 CI-tested) with cryptographic zeroization, RFC 8785 canonicalization, and state inspection. Browser support is not included; isomorphic support is separate R&D for RFC-006 / Midnight Grants Milestone 1.
-* [`@rohan-protocol/mcp`](./packages/mcp): Official Model Context Protocol (MCP) server for Claude Desktop, Cursor, Cline, and Gemini, with local Ed25519 agent identity and optional `agentId` inference from its signer.
-* [`@rohan-protocol/webmcp`](./packages/webmcp): Browser-native WebMCP shield with zero-width character sanitization (V-07).
+* [`@rohan-protocol/sdk`](packages/sdk): Zero-dependency Node.js SDK (`>=20.0.0`) with cryptographic zeroization, Ed25519 `did:key` signing, and `RohanAuditBundle` verification. Browser-safe offline verification primitives are exported via `@rohan-protocol/sdk/identity`. *(Client-side Compact ZK-SNARK proving in WASI Preview 2 is active R&D under RFC-006 / Midnight Grants Milestone 1.)*
+* [`@rohan-protocol/mcp`](packages/mcp): Official Model Context Protocol (MCP) server & CLI (`init`, `status`, `verify`) for Claude Desktop, Cursor, Cline, and Gemini, with local Ed25519 agent identity (`rohan-shield`).
+* [`@rohan-protocol/webmcp`](packages/webmcp): Browser-native WebMCP shield with zero-width character sanitization (V-07).
 
-## Local commitments and remote transports
+---
 
-With the **Local Stdio MCP** or SDK, the client computes `payloadDigest = SHA-256(UTF-8(JCS(confidentialPayload)))` locally, where JCS is RFC 8785 canonical JSON. The sealed action summary contains this inner digest. The outer `intentHash` is locally computed as SHA-256 over the UTF-8 commitment witness `agentId:sealedActionSummary:{}:timestamp`; it is not the payload digest. The plaintext confidential payload is not sent to the relayer. `dryRun: true` previews the signed commitment locally without submitting or producing a `txHash`.
+## 📚 Documentation
 
-The separate **Remote HTTP MCP** at `https://api.rohanprotocol.network/mcp` runs in a hosted sandbox; do not treat it as equivalent to local processing. Use Local Stdio when the local RAM boundary is required.
-
-The local MCP accepts `ROHAN_RELAYER_URL` (self-hosted relayer URL), `ROHAN_NETWORK` (`preprod`, `testnet`, or `mainnet`), `ROHAN_CONTRACT_ADDRESS`, `ROHAN_AGENT_PRIVATE_KEY` (64 hex-character seed; use a secret store), and `ROHAN_API_KEY`. Defaults are supplied for the relayer, network, and contract; an auto-provisioned local identity is used unless the private-key variable is set.
-
-To independently check a returned `txHash`, query the Midnight Preprod Indexer v4 GraphQL endpoint directly (remove a leading `0x` from the hash); this does not rely on Rohan's relayer:
-
-```bash
-curl -sS -X POST 'https://midnight-preprod.blockfrost.io/api/v0?project_id=<YOUR_BLOCKFROST_TOKEN>' \
-  -H 'content-type: application/json' \
-  --data '{"query":"{ transactions(offset: { hash: \"<TX_HASH_WITHOUT_0x>\" }) { hash protocolVersion block { height hash } } }"}'
-```
+* [Quickstart: Claude, Cursor & Remote MCP](docs/quickstart.md)
+* [SDK & A2A Non-Repudiation Guide](docs/sdk-a2a-guide.md)
+* [Architecture & Security Model](docs/architecture-security.md)
+* [API & MCP Tool Reference](docs/api-reference.md)
+* [Examples](examples/)
 
 ---
 
@@ -82,33 +76,40 @@ curl -sS -X POST 'https://midnight-preprod.blockfrost.io/api/v0?project_id=<YOUR
 npm install @rohan-protocol/sdk
 ```
 
-### 2. Basic SDK Usage
+### 2. Basic SDK Usage (Signed V-08 Handshake & Offline Audit)
 
-```typescript
-import { RohanClient, canonicalizeJson } from '@rohan-protocol/sdk';
+```ts
+import {
+  RohanClient,
+  InMemoryEd25519Signer,
+  verifyAuditBundle,
+} from '@rohan-protocol/sdk';
 
+// 1. Create a Sovereign Agent Identity (Ed25519 W3C did:key)
+const signer = await InMemoryEd25519Signer.generate();
 const client = new RohanClient({
-  contractAddress: '585ac0c4448257507d8ffa2a89e2aa00abd86ec9e94bdb6f553bc83e05f4dd0e',
+  network: 'preprod',
+  signer,
 });
 
-// 1. Inspect on-chain state (Read)
+// 2. Inspect on-chain state (Read)
 const state = await client.getLedgerState();
 console.log('Current Root:', state.currentStateRoot, 'Block:', state.blockHeight);
 
-// 2. Submit a confidential handshake (Write)
+// 3. Submit a signed confidential handshake (Write — agentId defaults to signer.did)
+const deal = { budgetUsd: 75000, approvalCode: 'AUTH-99' };
 const receipt = await client.submitHandshake({
-  agentId: 'did:midnight:agent-alpha',
   intent: 'Vendor Purchase Order #1042',
-  privateData: { budgetUsd: 75000, approvalCode: 'AUTH-99' },
+  confidentialPayload: deal,
 });
 console.log('Confirmed TxHash:', receipt.txHash);
+console.log('Inner PayloadDigest:', receipt.payloadDigest);
 
-// 3. Verify plaintext commitment locally (Verify)
-const audit = await client.verifyCommitment(
-  { budgetUsd: 75000, approvalCode: 'AUTH-99' },
-  receipt.intentHash
-);
-console.log('Cryptographic match?', audit.valid);
+// 4. Verify AuditBundle & plaintext commitment offline (0 Gas, 0 Network)
+const audit = await verifyAuditBundle(receipt.auditBundle!, deal);
+console.log('Cryptographic match?', audit.valid); // true (payloadMatch, intentBindingValid, signatureValid)
+
+signer.destroy();
 ```
 
 ---
