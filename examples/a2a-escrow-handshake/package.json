@@ -1,0 +1,20 @@
+{
+  "name": "rohan-a2a-escrow-handshake",
+  "version": "1.0.0",
+  "description": "Clone & Run in 60s: Buyer anchors a purchase order on Midnight L1, Seller verifies the audit bundle offline.",
+  "type": "module",
+  "scripts": {
+    "buyer": "tsx buyer.ts",
+    "seller": "tsx seller.ts"
+  },
+  "dependencies": {
+    "@rohan-protocol/sdk": "0.8.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

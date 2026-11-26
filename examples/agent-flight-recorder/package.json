@@ -1,0 +1,19 @@
+{
+  "name": "rohan-agent-flight-recorder",
+  "version": "1.0.0",
+  "description": "Clone & Run in 60s: AI-agent wrapper middleware that writes a Rohan audit bundle before every expensive tool/API call.",
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "dependencies": {
+    "@rohan-protocol/sdk": "0.8.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
